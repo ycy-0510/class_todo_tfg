@@ -1,11 +1,10 @@
-import 'package:class_todo_list/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
   late FirebaseAuth _auth;
-  AuthNotifier(this._ref) : super(AuthState()) {
+  AuthNotifier() : super(AuthState()) {
     _auth = FirebaseAuth.instance;
     if (_auth.currentUser != null) {
       _auth.currentUser!.reload();
@@ -24,7 +23,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     });
   }
-  final Ref _ref;
 
   void googleLogin() async {
     if (!state.loggedIn) {
@@ -60,9 +58,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       timeInSecForIosWeb: 1,
       webShowClose: true,
     );
-    _ref.read(toastProvider.notifier).update(
-          (state) => error,
-        );
   }
 }
 
