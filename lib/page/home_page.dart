@@ -373,17 +373,13 @@ class BottomSheet extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  className,
-                  style: const TextStyle(fontSize: 22.5),
-                ),
-                IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close))
-              ],
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.keyboard_arrow_down)),
+            const SizedBox(height: 5),
+            Text(
+              className,
+              style: const TextStyle(fontSize: 22.5),
             ),
             Expanded(
               child: ListView.builder(
