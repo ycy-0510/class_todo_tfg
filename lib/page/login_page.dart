@@ -37,9 +37,11 @@ class LoginPage extends ConsumerWidget {
                       width: 300,
                       height: 40,
                       child: ElevatedButton(
-                        onPressed: () => loading
+                        onLongPress: loading ? null : () {},
+                        onPressed: loading
                             ? null
-                            : ref.read(authProvider.notifier).googleLogin(),
+                            : () =>
+                                ref.read(authProvider.notifier).googleLogin(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,

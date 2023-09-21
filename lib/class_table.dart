@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 List<String> lesson = [
   //w1
   '資訊',
@@ -39,4 +41,16 @@ List<String> lesson = [
   '社團',
   '地科',
   '地科'
+];
+
+const List<TimeOfDay> classTimes = [
+  TimeOfDay(hour: 8, minute: 10),
+  TimeOfDay(hour: 9, minute: 10),
+  TimeOfDay(hour: 10, minute: 10),
+  TimeOfDay(hour: 11, minute: 10),
+  //rest
+  TimeOfDay(hour: 13, minute: 0),
+  TimeOfDay(hour: 14, minute: 0),
+  TimeOfDay(hour: 15, minute: 10),
+  TimeOfDay(hour: 16, minute: 10),
 ];
