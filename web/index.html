@@ -122,8 +122,6 @@
         onEntrypointLoaded: function(engineInitializer) {
           engineInitializer.initializeEngine().then(function(appRunner) {
             appRunner.runApp();
-            const el= document.getElementById('splash');
-            el.remove();
           });
         }
       });

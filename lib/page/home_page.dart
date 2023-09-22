@@ -37,7 +37,7 @@ class HomePage extends ConsumerWidget {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
+          preferredSize: const Size.fromHeight(70),
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
