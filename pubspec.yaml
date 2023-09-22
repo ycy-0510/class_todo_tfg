@@ -9,11 +9,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cloud_firestore: ^4.9.2
   firebase_auth: ^4.9.0
   firebase_core: ^2.15.1
   flutter_riverpod: ^2.4.0
   fluttertoast: ^8.2.2
+  connectivity_plus: ^4.0.2
+  flutter_native_splash: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +26,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+flutter_native_splash:
+  color: "#34A26D"
+  image: assets/logo.png

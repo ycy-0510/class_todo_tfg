@@ -1,4 +1,5 @@
 import 'package:class_todo_list/class_table.dart';
+import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -24,8 +25,14 @@ class TaskNotifier extends StateNotifier<List<Task>> {
   TaskNotifier(this._ref) : super([]) {
     db = FirebaseFirestore.instance;
     getData();
+    db.enablePersistence(const PersistenceSettings(synchronizeTabs: true));
     _ref.listen(dateProvider, (previous, next) {
       getData();
+    });
+    _ref.listen(connectivityStatusProvider, (previous, next) {
+      if (next == ConnectivityStatus.isConnected) {
+        getData();
+      }
     });
   }
 
@@ -63,12 +70,15 @@ class Task {
   DateTime date;
   int classTime;
   String userId;
-  Task(
-      {required this.name,
-      required this.type,
-      required this.date,
-      required this.classTime,
-      required this.userId});
+  String taskId;
+  Task({
+    required this.name,
+    required this.type,
+    required this.date,
+    required this.classTime,
+    required this.userId,
+    required this.taskId,
+  });
 
   factory Task.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot, [
@@ -81,6 +91,7 @@ class Task {
       date: data?['date'].toDate(),
       classTime: toClassTime(data?['date'].toDate()),
       userId: data?['userId'],
+      taskId: snapshot.id,
     );
   }
 }

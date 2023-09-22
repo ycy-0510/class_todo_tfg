@@ -1,4 +1,5 @@
 import 'package:class_todo_list/logic/auth_notifier.dart';
+import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/date_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
@@ -14,8 +15,9 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
   },
 );
 
-final formProvider = StateNotifierProvider<FormNotifier, FormState>((ref) {
-  return FormNotifier(ref);
+final formProvider =
+    StateNotifierProvider<TaskFormNotifier, TaskFormState>((ref) {
+  return TaskFormNotifier(ref);
 });
 
 final dateProvider = StateNotifierProvider<DateNotifier, DateState>((ref) {
@@ -24,4 +26,10 @@ final dateProvider = StateNotifierProvider<DateNotifier, DateState>((ref) {
 
 final taskProvider = StateNotifierProvider<TaskNotifier, List<Task>>((ref) {
   return TaskNotifier(ref);
+});
+
+final connectivityStatusProvider =
+    StateNotifierProvider<ConnectivityStatusNotifier, ConnectivityStatus>(
+        (ref) {
+  return ConnectivityStatusNotifier();
 });

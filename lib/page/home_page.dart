@@ -1,4 +1,6 @@
 import 'package:class_todo_list/class_table.dart';
+import 'package:class_todo_list/logic/connectivety_notifier.dart';
+import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:flutter/material.dart';
@@ -15,24 +17,57 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Column(children: [
-          const Text('Class Todo List'),
+          const Text('共享聯絡簿'),
           Text(
-            userName ?? 'Haven\'t login',
+            userName ?? '尚未登入',
             style: const TextStyle(fontSize: 15),
           ),
         ]),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: OutlinedButton(
+            child: OutlinedButton.icon(
               onPressed: () => ref.read(authProvider.notifier).logout(),
-              child: const Text(
-                'Log out',
+              icon: const Icon(Icons.logout),
+              label: const Text(
+                '登出',
                 style: TextStyle(fontSize: 15),
               ),
             ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  onPressed: () => ref.read(dateProvider.notifier).lastWeek(),
+                  icon: const Icon(Icons.arrow_back_ios_new),
+                  tooltip: '上週',
+                ),
+                OutlinedButton(
+                    onPressed: () => ref.read(dateProvider.notifier).today(),
+                    child: const Text(
+                      '今天',
+                      style: TextStyle(fontSize: 18),
+                    )),
+                IconButton(
+                  onPressed: () => ref.read(taskProvider.notifier).getData(),
+                  icon: const Icon(Icons.restart_alt),
+                  tooltip: '重載資料',
+                ),
+                IconButton(
+                  onPressed: () => ref.read(dateProvider.notifier).nextWeek(),
+                  icon: const Icon(Icons.arrow_forward_ios),
+                  tooltip: '下週',
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: const HomeBody(),
       floatingActionButton: FloatingActionButton(
@@ -54,145 +89,153 @@ class HomeBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     List<Task> tasks = ref.watch(taskProvider);
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Center(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    IconButton(
-                        onPressed: () =>
-                            ref.read(dateProvider.notifier).lastWeek(),
-                        icon: const Icon(Icons.arrow_back_ios_new)),
-                    OutlinedButton(
-                        onPressed: () =>
-                            ref.read(dateProvider.notifier).today(),
-                        child: const Text(
-                          'Today',
-                          style: TextStyle(fontSize: 18),
-                        )),
-                    IconButton(
-                        onPressed: () =>
-                            ref.read(taskProvider.notifier).getData(),
-                        icon: const Icon(Icons.restart_alt)),
-                    IconButton(
-                        onPressed: () =>
-                            ref.read(dateProvider.notifier).nextWeek(),
-                        icon: const Icon(Icons.arrow_forward_ios)),
-                  ],
-                ),
-              ),
-              Table(
-                  border: TableBorder.all(color: Colors.blue, width: 2),
-                  children: [
-                    TableRow(children: [
-                      for (int d = 0; d < 5; d++)
-                        Builder(builder: (context) {
-                          DateTime today = ref.watch(dateProvider).now;
-                          DateTime date = ref
-                              .watch(dateProvider)
-                              .sunday
-                              .add(Duration(days: d + 1));
-                          bool isToday = false;
-                          if (date.isBefore(today) &&
-                              date
-                                  .add(const Duration(days: 1))
-                                  .isAfter(today)) {
-                            isToday = true;
-                          }
-                          int month = date.month;
-                          int day = date.day;
-                          return Container(
-                            height: 60,
-                            alignment: Alignment.center,
-                            color: isToday ? Colors.blue : null,
-                            child: Text(
-                              '$month/$day',
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                          );
-                        }),
-                    ]),
-                    for (int l = 0; l < 7; l++)
-                      TableRow(children: [
-                        for (int d = 0; d < 5; d++)
-                          Container(
-                            color: classColor(d + 1, l, tasks),
-                            height: 60,
-                            alignment: Alignment.center,
-                            child: TextButton(
-                              onPressed: () {
-                                DateTime date = ref
-                                    .watch(dateProvider)
-                                    .sunday
-                                    .add(Duration(days: d + 1));
-                                ref.read(formProvider.notifier).dateChange(
-                                    DateTime(
-                                        date.year,
-                                        date.month,
-                                        date.day,
-                                        classTimes[l].hour,
-                                        classTimes[l].minute));
-                                Scaffold.of(context).showBottomSheet(
-                                    (context) => BottomSheet(
-                                        className: lesson[d * 7 + l],
-                                        weekDay: d + 1,
-                                        lessonIdx: l));
-                              },
-                              onLongPress: () {
-                                DateTime date = ref
-                                    .watch(dateProvider)
-                                    .sunday
-                                    .add(Duration(days: d + 1));
-                                ref.read(formProvider.notifier).dateChange(
-                                    DateTime(
-                                        date.year,
-                                        date.month,
-                                        date.day,
-                                        classTimes[l].hour,
-                                        classTimes[l].minute));
-                                showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (BuildContext context) =>
-                                        const TaskForm());
-                              },
-                              child: Text(
-                                lesson[d * 7 + l],
-                                style: const TextStyle(fontSize: 15),
+    return Center(
+      child: Builder(builder: (context) {
+        if (ref.watch(connectivityStatusProvider) ==
+            ConnectivityStatus.isConnected) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Table(
+                      border: TableBorder.all(color: Colors.blue, width: 2),
+                      children: [
+                        TableRow(children: [
+                          for (int d = 0; d < 5; d++)
+                            Builder(builder: (context) {
+                              DateTime today = ref.watch(dateProvider).now;
+                              DateTime date = ref
+                                  .watch(dateProvider)
+                                  .sunday
+                                  .add(Duration(days: d + 1));
+                              bool isToday = false;
+                              if (date.isBefore(today) &&
+                                  date
+                                      .add(const Duration(days: 1))
+                                      .isAfter(today)) {
+                                isToday = true;
+                              }
+                              int month = date.month;
+                              int day = date.day;
+                              return Container(
+                                height: 60,
+                                alignment: Alignment.center,
+                                color: isToday ? Colors.blue : null,
+                                child: Text(
+                                  '$month/$day',
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                              );
+                            }),
+                        ]),
+                        for (int l = 0; l < 7; l++)
+                          TableRow(children: [
+                            for (int d = 0; d < 5; d++)
+                              Container(
+                                color: classColor(d + 1, l, tasks),
+                                height: 60,
+                                alignment: Alignment.center,
+                                child: TextButton(
+                                  onPressed: () {
+                                    DateTime date = ref
+                                        .watch(dateProvider)
+                                        .sunday
+                                        .add(Duration(days: d + 1));
+                                    ref.read(formProvider.notifier).dateChange(
+                                        DateTime(
+                                            date.year,
+                                            date.month,
+                                            date.day,
+                                            classTimes[l].hour,
+                                            classTimes[l].minute));
+                                    Scaffold.of(context).showBottomSheet(
+                                        (context) => BottomSheet(
+                                            className: lesson[d * 7 + l],
+                                            weekDay: d + 1,
+                                            lessonIdx: l));
+                                  },
+                                  onLongPress: () {
+                                    DateTime date = ref
+                                        .watch(dateProvider)
+                                        .sunday
+                                        .add(Duration(days: d + 1));
+                                    ref.read(formProvider.notifier).dateChange(
+                                        DateTime(
+                                            date.year,
+                                            date.month,
+                                            date.day,
+                                            classTimes[l].hour,
+                                            classTimes[l].minute));
+                                    showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext context) =>
+                                            const TaskForm());
+                                  },
+                                  child: Text(
+                                    lesson[d * 7 + l],
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                          ]),
                       ]),
-                  ]),
-              ListView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: tasks.length,
-                itemBuilder: (context, idx) {
-                  String lessonName = tasks[idx].classTime == -1
-                      ? '其他時段'
-                      : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
-                  return ListTile(
-                    leading: const Icon(Icons.task_alt),
-                    title: Text(tasks[idx].name),
-                    subtitle: Text(
-                        '$lessonName ${['考試', '作業', '報告'][tasks[idx].type]}'),
-                    trailing: Text(tasks[idx].date.toString()),
-                  );
-                },
-              )
+                  ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: tasks.length,
+                    itemBuilder: (context, idx) {
+                      String lessonName = tasks[idx].classTime == -1
+                          ? '其他時段'
+                          : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
+                      return ListTile(
+                        leading: const Icon(Icons.task_alt),
+                        title: Text(tasks[idx].name),
+                        subtitle: Text('$lessonName ${[
+                          '考試',
+                          '作業',
+                          '報告',
+                          '提醒',
+                        ][tasks[idx].type]}'),
+                        trailing: Text(
+                          tasks[idx].date.toString().split('.')[0],
+                        ),
+                        onLongPress: tasks[idx].userId ==
+                                ref.watch(authProvider).user?.uid
+                            ? () {
+                                ref
+                                    .read(formProvider.notifier)
+                                    .startUpdate(tasks[idx]);
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => const TaskForm(),
+                                );
+                              }
+                            : null,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          );
+        } else {
+          return const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.cloud_off,
+                size: 50,
+              ),
+              Text('您已離線，請連接網路以繼續使用'),
             ],
-          ),
-        ),
-      ),
+          );
+        }
+      }),
     );
   }
 
@@ -207,13 +250,11 @@ class HomeBody extends ConsumerWidget {
       case 0:
         return null;
       case 1:
-        return Colors.yellow.shade300;
+        return Colors.brown.shade200;
       case 2:
-        return Colors.orange.shade400;
-      case 3:
-        return Colors.orange.shade900;
+        return Colors.red.shade200;
     }
-    return Colors.red;
+    return Colors.pink.shade200;
   }
 }
 
@@ -227,6 +268,14 @@ class TaskForm extends ConsumerStatefulWidget {
 class _TaskFormState extends ConsumerState<TaskForm> {
   final _formKey = GlobalKey<FormState>();
 
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void initState() {
+    _controller.text = ref.read(formProvider).name;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(
@@ -234,9 +283,12 @@ class _TaskFormState extends ConsumerState<TaskForm> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('New Task'),
+          const Text('新增項目'),
           IconButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                ref.read(formProvider.notifier).editFinish();
+              },
               icon: const Icon(Icons.close))
         ],
       ),
@@ -248,10 +300,11 @@ class _TaskFormState extends ConsumerState<TaskForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
-                decoration: const InputDecoration(hintText: 'Task name'),
+                controller: _controller,
+                decoration: const InputDecoration(hintText: '項目名稱'),
                 validator: (value) {
                   if (value == null || value.isEmpty || value.length < 2) {
-                    return 'Please enter task name!';
+                    return '請輸入項目名稱';
                   }
                   return null;
                 },
@@ -274,6 +327,10 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                     DropdownMenuItem<int>(
                       value: 2,
                       child: Text('報告'),
+                    ),
+                    DropdownMenuItem<int>(
+                      value: 2,
+                      child: Text('提醒'),
                     ),
                   ]),
               Row(
@@ -323,25 +380,72 @@ class _TaskFormState extends ConsumerState<TaskForm> {
           ),
         ),
         const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Fluttertoast.showToast(
-                msg: 'Processing Data',
-                timeInSecForIosWeb: 1,
-                webShowClose: true,
-              );
-              ref.read(formProvider.notifier).upload();
-              Navigator.of(context).pop();
-              ref.read(taskProvider.notifier).getData();
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
+        if (ref.watch(formProvider).formStatus == TaskFormStatus.create)
+          ElevatedButton(
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                Fluttertoast.showToast(
+                  msg: '建立資料中',
+                  timeInSecForIosWeb: 1,
+                  webShowClose: true,
+                );
+                Navigator.of(context).pop();
+                await ref.read(formProvider.notifier).create();
+                ref.read(taskProvider.notifier).getData();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('建立'),
           ),
-          child: const Text('Save'),
-        ),
+        if (ref.watch(formProvider).formStatus == TaskFormStatus.update)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  if (_formKey.currentState!.validate()) {
+                    Fluttertoast.showToast(
+                      msg: '更新資料中',
+                      timeInSecForIosWeb: 1,
+                      webShowClose: true,
+                    );
+                    Navigator.of(context).pop();
+                    await ref.read(formProvider.notifier).update();
+                    ref.read(taskProvider.notifier).getData();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('更新'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onLongPress: () async {
+                  if (_formKey.currentState!.validate()) {
+                    Fluttertoast.showToast(
+                      msg: '刪除資料中',
+                      timeInSecForIosWeb: 1,
+                      webShowClose: true,
+                    );
+                    Navigator.of(context).pop();
+                    await ref.read(formProvider.notifier).remove();
+                    ref.read(taskProvider.notifier).getData();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: null,
+                child: const Text('長按刪除'),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -374,8 +478,10 @@ class BottomSheet extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.keyboard_arrow_down)),
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(),
+              child: const Icon(Icons.keyboard_arrow_down_rounded),
+            ),
             const SizedBox(height: 5),
             Text(
               className,
@@ -389,13 +495,15 @@ class BottomSheet extends ConsumerWidget {
                   return ListTile(
                     leading: const Icon(Icons.task_alt),
                     title: Text(tasksForThisClass[idx].name),
-                    subtitle:
-                        Text(['考試', '作業', '報告'][tasksForThisClass[idx].type]),
-                    trailing: Text(tasksForThisClass[idx].date.toString()),
+                    subtitle: Text(
+                        ['考試', '作業', '報告', '提醒'][tasksForThisClass[idx].type]),
+                    trailing: Text(
+                      tasksForThisClass[idx].date.toString().split('.')[0],
+                    ),
                   );
                 },
               ),
-            )
+            ),
           ],
         ),
       ),

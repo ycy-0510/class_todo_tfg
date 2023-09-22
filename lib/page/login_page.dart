@@ -22,7 +22,7 @@ class LoginPage extends ConsumerWidget {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
                     child: Text(
-                      'Login to Use Class Todo List',
+                      '登入以繼續使用「共享聯絡簿」',
                       style: TextStyle(fontSize: 20),
                     ),
                   ),
@@ -47,10 +47,14 @@ class LoginPage extends ConsumerWidget {
                           foregroundColor: Colors.white,
                         ),
                         child: const Text(
-                          'Login with Google',
+                          '使用Google登入',
                           style: TextStyle(fontSize: 15),
                         ),
                       )),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                    child: Text('©2023 YCY'),
+                  )
                 ],
               ),
             ),
