@@ -25,7 +25,6 @@ class TaskNotifier extends StateNotifier<List<Task>> {
   TaskNotifier(this._ref) : super([]) {
     db = FirebaseFirestore.instance;
     getData();
-    db.enablePersistence(const PersistenceSettings(synchronizeTabs: true));
     _ref.listen(dateProvider, (previous, next) {
       getData();
     });

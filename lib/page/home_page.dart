@@ -4,6 +4,7 @@ import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -16,6 +17,7 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        systemOverlayStyle: const SystemUiOverlayStyle(),
         title: Column(children: [
           const Text('共享聯絡簿'),
           Text(
@@ -71,7 +73,9 @@ class HomePage extends ConsumerWidget {
       ),
       body: const HomeBody(),
       floatingActionButton: FloatingActionButton(
+        tooltip: '新增事項',
         onPressed: () {
+          ref.read(formProvider.notifier).dateChange(DateTime.now());
           showDialog(
               context: context,
               barrierDismissible: false,
@@ -140,19 +144,10 @@ class HomeBody extends ConsumerWidget {
                                 alignment: Alignment.center,
                                 child: TextButton(
                                   onPressed: () {
-                                    DateTime date = ref
-                                        .watch(dateProvider)
-                                        .sunday
-                                        .add(Duration(days: d + 1));
-                                    ref.read(formProvider.notifier).dateChange(
-                                        DateTime(
-                                            date.year,
-                                            date.month,
-                                            date.day,
-                                            classTimes[l].hour,
-                                            classTimes[l].minute));
-                                    Scaffold.of(context).showBottomSheet(
-                                        (context) => BottomSheet(
+                                    showModalBottomSheet(
+                                        showDragHandle: true,
+                                        context: context,
+                                        builder: (context) => BottomSheet(
                                             className: lesson[d * 7 + l],
                                             weekDay: d + 1,
                                             lessonIdx: l));
@@ -329,7 +324,7 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                       child: Text('報告'),
                     ),
                     DropdownMenuItem<int>(
-                      value: 2,
+                      value: 3,
                       child: Text('提醒'),
                     ),
                   ]),
@@ -470,6 +465,8 @@ class BottomSheet extends ConsumerWidget {
       }
     }
 
+    DateTime date = ref.watch(dateProvider).sunday.add(Duration(days: weekDay));
+
     return SizedBox(
       height: 400,
       child: Padding(
@@ -477,15 +474,30 @@ class BottomSheet extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(),
-              child: const Icon(Icons.keyboard_arrow_down_rounded),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              className,
-              style: const TextStyle(fontSize: 22.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${date.month}/${date.day} 第${lessonIdx + 1}節 $className',
+                  style: const TextStyle(fontSize: 22.5),
+                ),
+                IconButton(
+                  onPressed: () {
+                    ref.read(formProvider.notifier).dateChange(DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        classTimes[lessonIdx].hour,
+                        classTimes[lessonIdx].minute));
+                    showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (BuildContext context) => const TaskForm());
+                  },
+                  icon: const Icon(Icons.add_task),
+                  tooltip: '新增事項在這一節課',
+                ),
+              ],
             ),
             Expanded(
               child: ListView.builder(
@@ -500,6 +512,18 @@ class BottomSheet extends ConsumerWidget {
                     trailing: Text(
                       tasksForThisClass[idx].date.toString().split('.')[0],
                     ),
+                    onLongPress:
+                        tasks[idx].userId == ref.watch(authProvider).user?.uid
+                            ? () {
+                                ref
+                                    .read(formProvider.notifier)
+                                    .startUpdate(tasks[idx]);
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => const TaskForm(),
+                                );
+                              }
+                            : null,
                   );
                 },
               ),
