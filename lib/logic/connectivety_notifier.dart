@@ -8,17 +8,12 @@ class ConnectivityStatusNotifier extends StateNotifier<ConnectivityStatus> {
   StreamController<ConnectivityResult> controller =
       StreamController<ConnectivityResult>();
 
-  ConnectivityStatus? lastResult;
-  ConnectivityStatus? newState;
-
-  late StreamSubscription<ConnectivityResult> listener;
+  StreamSubscription<ConnectivityResult>? listener;
 
   ConnectivityStatusNotifier() : super(ConnectivityStatus.isConnected) {
-    if (state == ConnectivityStatus.isConnected) {
-      lastResult = ConnectivityStatus.isConnected;
-    } else {
-      lastResult = ConnectivityStatus.isDisonnected;
-    }
+    late ConnectivityStatus lastResult;
+    late ConnectivityStatus newState;
+
     lastResult = ConnectivityStatus.notDetermined;
     listener = Connectivity()
         .onConnectivityChanged
@@ -35,7 +30,7 @@ class ConnectivityStatusNotifier extends StateNotifier<ConnectivityStatus> {
           newState = ConnectivityStatus.isDisonnected;
       }
       if (newState != lastResult) {
-        state = newState!;
+        state = newState;
         lastResult = newState;
       }
     });
@@ -43,7 +38,7 @@ class ConnectivityStatusNotifier extends StateNotifier<ConnectivityStatus> {
 
   @override
   void dispose() {
-    listener.cancel();
+    listener?.cancel();
     super.dispose();
   }
 }

@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:class_todo_list/class_table.dart';
-import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -19,39 +20,37 @@ int toClassTime(DateTime dateTime) {
   return -1;
 }
 
-class TaskNotifier extends StateNotifier<List<Task>> {
+class TaskNotifier extends StateNotifier<TaskState> {
   late FirebaseFirestore db;
   final Ref _ref;
-  TaskNotifier(this._ref) : super([]) {
+  StreamSubscription<QuerySnapshot>? listener;
+  TaskNotifier(this._ref) : super(TaskState([])) {
     db = FirebaseFirestore.instance;
     getData();
     _ref.listen(dateProvider, (previous, next) {
       getData();
     });
-    _ref.listen(connectivityStatusProvider, (previous, next) {
-      if (next == ConnectivityStatus.isConnected) {
-        getData();
-      }
-    });
   }
 
-  void getData() async {
-    final citiesRef = db.collection("task");
-    try {
-      final data = await citiesRef
-          .where("date",
-              isLessThanOrEqualTo:
-                  _ref.read(dateProvider).sunday.add(const Duration(days: 7)))
-          .where("date", isGreaterThanOrEqualTo: _ref.read(dateProvider).sunday)
-          .get();
-      List<Task> tasks = [];
-      for (var docSnapshot in data.docs) {
-        tasks.add(Task.fromFirestore(docSnapshot));
-      }
-      state = tasks;
-    } catch (e) {
-      _showError(e.toString());
-    }
+  void getData() {
+    state = TaskState([], loading: true);
+    final dataRef = db
+        .collection("task")
+        .where("date",
+            isLessThanOrEqualTo:
+                _ref.read(dateProvider).sunday.add(const Duration(days: 7)))
+        .where("date", isGreaterThanOrEqualTo: _ref.read(dateProvider).sunday);
+    listener?.cancel();
+    listener = dataRef.snapshots().listen(
+      (data) {
+        List<Task> tasks = [];
+        for (var docSnapshot in data.docs) {
+          tasks.add(Task.fromFirestore(docSnapshot));
+        }
+        state = TaskState(tasks);
+      },
+      onError: (e) => _showError(e.toString()),
+    );
   }
 
   void _showError(String error) {
@@ -61,6 +60,18 @@ class TaskNotifier extends StateNotifier<List<Task>> {
       webShowClose: true,
     );
   }
+
+  @override
+  void dispose() {
+    listener?.cancel();
+    super.dispose();
+  }
+}
+
+class TaskState {
+  List<Task> tasks;
+  bool loading;
+  TaskState(this.tasks, {this.loading = false});
 }
 
 class Task {

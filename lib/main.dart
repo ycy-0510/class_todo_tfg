@@ -1,3 +1,4 @@
+import 'package:class_todo_list/page/install_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:class_todo_list/logic/auth_notifier.dart';
 import 'package:class_todo_list/page/home_page.dart';
@@ -7,7 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pwa_install/pwa_install.dart';
 import 'firebase_options.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +20,8 @@ Future<void> main() async {
   );
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   FlutterNativeSplash.remove();
+  usePathUrlStrategy();
+  PWAInstall().setup(installCallback: () {});
   runApp(const ProviderScope(
     child: MainApp(),
   ));
@@ -27,7 +33,7 @@ class MainApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     AuthState authState = ref.watch(authProvider);
-    return MaterialApp(
+    return MaterialApp.router(
       theme: ThemeData.from(
         colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.green, brightness: Brightness.light),
@@ -40,7 +46,6 @@ class MainApp extends ConsumerWidget {
       ),
       themeMode: ThemeMode.system,
       title: '共享聯絡簿',
-      home: authState.loggedIn ? const HomePage() : const LoginPage(),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -51,6 +56,19 @@ class MainApp extends ConsumerWidget {
         Locale('en', 'US'),
       ],
       debugShowCheckedModeBanner: false,
+      routerConfig: GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) =>
+                authState.loggedIn ? const HomePage() : const LoginPage(),
+          ),
+          GoRoute(
+            path: '/install',
+            builder: (context, state) => const InstallPage(),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -57,11 +57,6 @@ class HomePage extends ConsumerWidget {
                       style: TextStyle(fontSize: 18),
                     )),
                 IconButton(
-                  onPressed: () => ref.read(taskProvider.notifier).getData(),
-                  icon: const Icon(Icons.restart_alt),
-                  tooltip: '重載資料',
-                ),
-                IconButton(
                   onPressed: () => ref.read(dateProvider.notifier).nextWeek(),
                   icon: const Icon(Icons.arrow_forward_ios),
                   tooltip: '下週',
@@ -92,92 +87,84 @@ class HomeBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    List<Task> tasks = ref.watch(taskProvider);
+    TaskState taskState = ref.watch(taskProvider);
+    List<Task> tasks = taskState.tasks;
     return Center(
       child: Builder(builder: (context) {
         if (ref.watch(connectivityStatusProvider) ==
             ConnectivityStatus.isConnected) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
+          if (!taskState.loading) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Table(
-                      border: TableBorder.all(color: Colors.blue, width: 2),
-                      children: [
-                        TableRow(children: [
-                          for (int d = 0; d < 5; d++)
-                            Builder(builder: (context) {
-                              DateTime today = ref.watch(dateProvider).now;
-                              DateTime date = ref
-                                  .watch(dateProvider)
-                                  .sunday
-                                  .add(Duration(days: d + 1));
-                              bool isToday = false;
-                              if (date.isBefore(today) &&
-                                  date
-                                      .add(const Duration(days: 1))
-                                      .isAfter(today)) {
-                                isToday = true;
-                              }
-                              int month = date.month;
-                              int day = date.day;
-                              return Container(
-                                height: 60,
-                                alignment: Alignment.center,
-                                color: isToday ? Colors.blue : null,
-                                child: Text(
-                                  '$month/$day',
-                                  style: const TextStyle(fontSize: 15),
-                                ),
-                              );
-                            }),
-                        ]),
-                        for (int l = 0; l < 7; l++)
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Table(
+                        border: TableBorder.all(color: Colors.blue, width: 2),
+                        children: [
                           TableRow(children: [
                             for (int d = 0; d < 5; d++)
-                              Container(
-                                color: classColor(d + 1, l, tasks),
-                                height: 60,
-                                alignment: Alignment.center,
-                                child: TextButton(
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                        showDragHandle: true,
-                                        context: context,
-                                        builder: (context) => BottomSheet(
-                                            className: lesson[d * 7 + l],
-                                            weekDay: d + 1,
-                                            lessonIdx: l));
-                                  },
-                                  onLongPress: () {
-                                    DateTime date = ref
-                                        .watch(dateProvider)
-                                        .sunday
-                                        .add(Duration(days: d + 1));
-                                    ref.read(formProvider.notifier).dateChange(
-                                        DateTime(
-                                            date.year,
-                                            date.month,
-                                            date.day,
-                                            classTimes[l].hour,
-                                            classTimes[l].minute));
-                                    showDialog(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext context) =>
-                                            const TaskForm());
-                                  },
+                              Builder(builder: (context) {
+                                DateTime today = ref.watch(dateProvider).now;
+                                DateTime date = ref
+                                    .watch(dateProvider)
+                                    .sunday
+                                    .add(Duration(days: d + 1));
+                                bool isToday = false;
+                                if (date.isBefore(today) &&
+                                    date
+                                        .add(const Duration(days: 1))
+                                        .isAfter(today)) {
+                                  isToday = true;
+                                }
+                                int month = date.month;
+                                int day = date.day;
+                                return Container(
+                                  height: 60,
+                                  alignment: Alignment.center,
+                                  color: isToday ? Colors.blue : null,
                                   child: Text(
-                                    lesson[d * 7 + l],
+                                    '$month/$day',
                                     style: const TextStyle(fontSize: 15),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                           ]),
-                      ]),
+                          for (int l = 0; l < 7; l++)
+                            TableRow(children: [
+                              for (int d = 0; d < 5; d++)
+                                Container(
+                                  color: classColor(
+                                      d + 1, l, tasks, Theme.of(context)),
+                                  height: 60,
+                                  alignment: Alignment.center,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      showModalBottomSheet(
+                                          showDragHandle: true,
+                                          context: context,
+                                          builder: (context) => BottomSheet(
+                                              className: lesson[d * 7 + l],
+                                              weekDay: d + 1,
+                                              lessonIdx: l));
+                                    },
+                                    child: Text(
+                                      lesson[d * 7 + l],
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.black
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ]),
+                        ]),
+                  ),
                   ListView.builder(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
@@ -216,8 +203,12 @@ class HomeBody extends ConsumerWidget {
                   const SizedBox(height: 100),
                 ],
               ),
-            ),
-          );
+            );
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
         } else {
           return const Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -234,7 +225,8 @@ class HomeBody extends ConsumerWidget {
     );
   }
 
-  Color? classColor(int weekDay, int lessonIdx, List<Task> tasks) {
+  Color? classColor(
+      int weekDay, int lessonIdx, List<Task> tasks, ThemeData themeData) {
     int counter = 0;
     for (Task task in tasks) {
       if (task.classTime == lessonIdx && task.date.weekday == weekDay) {
@@ -245,11 +237,11 @@ class HomeBody extends ConsumerWidget {
       case 0:
         return null;
       case 1:
-        return Colors.brown.shade200;
+        return themeData.colorScheme.tertiaryContainer;
       case 2:
-        return Colors.red.shade200;
+        return themeData.colorScheme.secondaryContainer;
     }
-    return Colors.pink.shade200;
+    return themeData.colorScheme.primaryContainer;
   }
 }
 
@@ -278,7 +270,9 @@ class _TaskFormState extends ConsumerState<TaskForm> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('新增項目'),
+          Text(ref.watch(formProvider).formStatus == TaskFormStatus.create
+              ? '新增項目'
+              : '修改項目'),
           IconButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -377,7 +371,7 @@ class _TaskFormState extends ConsumerState<TaskForm> {
         const SizedBox(height: 10),
         if (ref.watch(formProvider).formStatus == TaskFormStatus.create)
           ElevatedButton(
-            onPressed: () async {
+            onPressed: () {
               if (_formKey.currentState!.validate()) {
                 Fluttertoast.showToast(
                   msg: '建立資料中',
@@ -385,8 +379,7 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                   webShowClose: true,
                 );
                 Navigator.of(context).pop();
-                await ref.read(formProvider.notifier).create();
-                ref.read(taskProvider.notifier).getData();
+                ref.read(formProvider.notifier).create();
               }
             },
             style: ElevatedButton.styleFrom(
@@ -400,7 +393,7 @@ class _TaskFormState extends ConsumerState<TaskForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ElevatedButton(
-                onPressed: () async {
+                onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     Fluttertoast.showToast(
                       msg: '更新資料中',
@@ -408,8 +401,7 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                       webShowClose: true,
                     );
                     Navigator.of(context).pop();
-                    await ref.read(formProvider.notifier).update();
-                    ref.read(taskProvider.notifier).getData();
+                    ref.read(formProvider.notifier).update();
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -428,8 +420,7 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                       webShowClose: true,
                     );
                     Navigator.of(context).pop();
-                    await ref.read(formProvider.notifier).remove();
-                    ref.read(taskProvider.notifier).getData();
+                    ref.read(formProvider.notifier).remove();
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -457,7 +448,8 @@ class BottomSheet extends ConsumerWidget {
   final int lessonIdx;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    List<Task> tasks = ref.watch(taskProvider);
+    TaskState taskState = ref.watch(taskProvider);
+    List<Task> tasks = taskState.tasks;
     List<Task> tasksForThisClass = [];
     for (Task task in tasks) {
       if (task.classTime == lessonIdx && task.date.weekday == weekDay) {
@@ -469,12 +461,12 @@ class BottomSheet extends ConsumerWidget {
 
     return SizedBox(
       height: 400,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
@@ -499,37 +491,37 @@ class BottomSheet extends ConsumerWidget {
                 ),
               ],
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: tasksForThisClass.length,
-                physics: const BouncingScrollPhysics(),
-                itemBuilder: (context, idx) {
-                  return ListTile(
-                    leading: const Icon(Icons.task_alt),
-                    title: Text(tasksForThisClass[idx].name),
-                    subtitle: Text(
-                        ['考試', '作業', '報告', '提醒'][tasksForThisClass[idx].type]),
-                    trailing: Text(
-                      tasksForThisClass[idx].date.toString().split('.')[0],
-                    ),
-                    onLongPress:
-                        tasks[idx].userId == ref.watch(authProvider).user?.uid
-                            ? () {
-                                ref
-                                    .read(formProvider.notifier)
-                                    .startUpdate(tasks[idx]);
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => const TaskForm(),
-                                );
-                              }
-                            : null,
-                  );
-                },
-              ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: tasksForThisClass.length,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, idx) {
+                return ListTile(
+                  leading: const Icon(Icons.task_alt),
+                  title: Text(tasksForThisClass[idx].name),
+                  subtitle: Text(
+                      ['考試', '作業', '報告', '提醒'][tasksForThisClass[idx].type]),
+                  trailing: Text(
+                    tasksForThisClass[idx].date.toString().split('.')[0],
+                  ),
+                  onLongPress: tasksForThisClass[idx].userId ==
+                          ref.watch(authProvider).user?.uid
+                      ? () {
+                          ref
+                              .read(formProvider.notifier)
+                              .startUpdate(tasksForThisClass[idx]);
+                          showDialog(
+                            context: context,
+                            builder: (context) => const TaskForm(),
+                          );
+                        }
+                      : null,
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

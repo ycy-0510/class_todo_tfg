@@ -24,12 +24,12 @@ final dateProvider = StateNotifierProvider<DateNotifier, DateState>((ref) {
   return DateNotifier();
 });
 
-final taskProvider = StateNotifierProvider<TaskNotifier, List<Task>>((ref) {
+final taskProvider =
+    StateNotifierProvider.autoDispose<TaskNotifier, TaskState>((ref) {
   return TaskNotifier(ref);
 });
 
-final connectivityStatusProvider =
-    StateNotifierProvider<ConnectivityStatusNotifier, ConnectivityStatus>(
-        (ref) {
+final connectivityStatusProvider = StateNotifierProvider.autoDispose<
+    ConnectivityStatusNotifier, ConnectivityStatus>((ref) {
   return ConnectivityStatusNotifier();
 });
