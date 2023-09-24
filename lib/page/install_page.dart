@@ -16,7 +16,7 @@ class InstallPage extends ConsumerWidget {
       ),
       body: Center(
         child: Builder(builder: (context) {
-          OS os = OS.android; //getOSInsideWeb();
+          OS os = getOSInsideWeb();
           if (os == OS.iOS) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
