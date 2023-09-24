@@ -23,7 +23,7 @@ class InstallPage extends ConsumerWidget {
               children: [
                 const Expanded(child: SizedBox()),
                 Image.asset(
-                  '/logo.png',
+                  'assets/img/logo.png',
                   width: 100,
                   height: 100,
                 ),
