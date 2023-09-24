@@ -2,6 +2,7 @@ import 'dart:html';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 enum OS { android, iOS, other }
 
@@ -84,7 +85,7 @@ class InstallPage extends ConsumerWidget {
                 ),
                 const Expanded(child: SizedBox()),
                 Image.asset(
-                  '/logo.png',
+                  'assets/img/logo.png',
                   width: 100,
                   height: 100,
                 ),
@@ -96,9 +97,34 @@ class InstallPage extends ConsumerWidget {
               ],
             );
           } else {
-            return const Text(
-              '這部裝置看似無法安裝！',
-              style: TextStyle(fontSize: 20),
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Expanded(child: SizedBox()),
+                Image.asset(
+                  'assets/img/logo.png',
+                  width: 100,
+                  height: 100,
+                ),
+                const Text(
+                  '共享聯絡簿',
+                  style: TextStyle(fontSize: 18),
+                ),
+                const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Text(
+                    '這部裝置看似不需安裝！',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                ),
+                ElevatedButton(
+                    onPressed: () => context.go('/'),
+                    child: const Text(
+                      '開始使用',
+                      style: TextStyle(fontSize: 18),
+                    )),
+                const Expanded(child: SizedBox()),
+              ],
             );
           }
         }),
