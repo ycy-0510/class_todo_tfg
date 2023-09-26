@@ -126,10 +126,14 @@ class HomeBody extends ConsumerWidget {
                                 return Container(
                                   height: 60,
                                   alignment: Alignment.center,
-                                  color: isToday ? Colors.blue : null,
                                   child: Text(
                                     '$month/$day',
-                                    style: const TextStyle(fontSize: 15),
+                                    style: TextStyle(
+                                      fontSize: isToday ? 18 : 15,
+                                      color: isToday ? Colors.blue : null,
+                                      fontWeight:
+                                          isToday ? FontWeight.bold : null,
+                                    ),
                                   ),
                                 );
                               }),
