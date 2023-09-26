@@ -21,7 +21,7 @@ class HomePage extends ConsumerWidget {
         title: Column(children: [
           const Text('共享聯絡簿'),
           Text(
-            userName ?? '尚未登入',
+            userName ?? '訪客',
             style: const TextStyle(fontSize: 15),
           ),
         ]),
@@ -67,17 +67,19 @@ class HomePage extends ConsumerWidget {
         ),
       ),
       body: const HomeBody(),
-      floatingActionButton: FloatingActionButton(
-        tooltip: '新增事項',
-        onPressed: () {
-          ref.read(formProvider.notifier).dateChange(DateTime.now());
-          showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (BuildContext context) => const TaskForm());
-        },
-        child: const Icon(Icons.add_task),
-      ),
+      floatingActionButton: ref.watch(authProvider).user!.isAnonymous
+          ? null
+          : FloatingActionButton(
+              tooltip: '新增事項',
+              onPressed: () {
+                ref.read(formProvider.notifier).dateChange(DateTime.now());
+                showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (BuildContext context) => const TaskForm());
+              },
+              child: const Icon(Icons.add_task),
+            ),
     );
   }
 }
@@ -473,22 +475,23 @@ class BottomSheet extends ConsumerWidget {
                   '${date.month}/${date.day} 第${lessonIdx + 1}節 $className',
                   style: const TextStyle(fontSize: 22.5),
                 ),
-                IconButton(
-                  onPressed: () {
-                    ref.read(formProvider.notifier).dateChange(DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                        classTimes[lessonIdx].hour,
-                        classTimes[lessonIdx].minute));
-                    showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (BuildContext context) => const TaskForm());
-                  },
-                  icon: const Icon(Icons.add_task),
-                  tooltip: '新增事項在這一節課',
-                ),
+                if (!ref.watch(authProvider).user!.isAnonymous)
+                  IconButton(
+                    onPressed: () {
+                      ref.read(formProvider.notifier).dateChange(DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          classTimes[lessonIdx].hour,
+                          classTimes[lessonIdx].minute));
+                      showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) => const TaskForm());
+                    },
+                    icon: const Icon(Icons.add_task),
+                    tooltip: '新增事項在這一節課',
+                  ),
               ],
             ),
           ),

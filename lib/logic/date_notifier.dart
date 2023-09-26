@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DateNotifier extends StateNotifier<DateState> {
@@ -7,6 +9,14 @@ class DateNotifier extends StateNotifier<DateState> {
     int month = state.now.month;
     int day = state.now.day - (state.now.weekday) % 7;
     state = state.copy(sunday: DateTime(year, month, day));
+    Timer.periodic(const Duration(minutes: 2), (timer) {
+      DateTime now = DateTime.now();
+      if (!(now.year == state.now.year &&
+          now.month == state.now.month &&
+          now.day == state.now.day)) {
+        state = state.copy(now: now);
+      }
+    });
   }
 
   void nextWeek() {

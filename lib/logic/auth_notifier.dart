@@ -37,6 +37,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  void anonymousLogin() async {
+    if (!state.loggedIn) {
+      state = state.load(true);
+      try {
+        await _auth.signInAnonymously();
+      } catch (err) {
+        state = state.load(false);
+        _showError(err.toString());
+      }
+    }
+  }
+
   void logout() async {
     if (state.loggedIn) {
       state = state.load(true);
