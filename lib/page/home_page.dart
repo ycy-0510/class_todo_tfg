@@ -139,36 +139,51 @@ class HomeBody extends ConsumerWidget {
                               }),
                           ]),
                           for (int l = 0; l < 7; l++)
-                            TableRow(children: [
-                              for (int d = 0; d < 5; d++)
-                                Container(
-                                  color: classColor(
-                                      d + 1, l, tasks, Theme.of(context)),
-                                  height: 60,
-                                  alignment: Alignment.center,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      showModalBottomSheet(
-                                          showDragHandle: true,
-                                          context: context,
-                                          builder: (context) => BottomSheet(
-                                              className: lesson[d * 7 + l],
-                                              weekDay: d + 1,
-                                              lessonIdx: l));
-                                    },
-                                    child: Text(
-                                      lesson[d * 7 + l],
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Colors.black
-                                            : Colors.white,
+                            TableRow(
+                                decoration: l == 3
+                                    ? const BoxDecoration(
+                                        border: Border(
+                                        bottom: BorderSide(
+                                            width: 5,
+                                            color: Colors.blue,
+                                            strokeAlign:
+                                                BorderSide.strokeAlignInside),
+                                      ))
+                                    : null,
+                                children: [
+                                  for (int d = 0; d < 5; d++)
+                                    Container(
+                                      margin: l == 3
+                                          ? const EdgeInsets.only(bottom: 5)
+                                          : null,
+                                      color: classColor(
+                                          d + 1, l, tasks, Theme.of(context)),
+                                      height: 60,
+                                      alignment: Alignment.center,
+                                      child: TextButton(
+                                        onPressed: () {
+                                          showModalBottomSheet(
+                                              showDragHandle: true,
+                                              context: context,
+                                              builder: (context) => BottomSheet(
+                                                  className: lesson[d * 7 + l],
+                                                  weekDay: d + 1,
+                                                  lessonIdx: l));
+                                        },
+                                        child: Text(
+                                          lesson[d * 7 + l],
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                            ]),
+                                ]),
                         ]),
                   ),
                   ListView.builder(
@@ -227,7 +242,7 @@ class HomeBody extends ConsumerWidget {
                                 '四',
                                 '五',
                                 '六'
-                              ][tasks[idx].date.weekday%7]}'),
+                              ][tasks[idx].date.weekday % 7]}'),
                             ),
                           );
                         } else {
