@@ -251,13 +251,27 @@ class HomeBody extends ConsumerWidget {
                       }
                     },
                   ),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 50),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 5),
+                    child: Text(
+                      '共享聯絡簿 by YCY',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ],
               ),
             );
           } else {
-            return const Center(
-              child: CircularProgressIndicator(),
+            return const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(
+                  height: 20,
+                ),
+                Text('共享聯絡簿 by YCY'),
+              ],
             );
           }
         } else {
@@ -269,6 +283,10 @@ class HomeBody extends ConsumerWidget {
                 size: 50,
               ),
               Text('您已離線，請連接網路以繼續使用'),
+              SizedBox(
+                height: 20,
+              ),
+              Text('共享聯絡簿 by YCY'),
             ],
           );
         }
