@@ -227,7 +227,7 @@ class HomeBody extends ConsumerWidget {
                                 '四',
                                 '五',
                                 '六'
-                              ][tasks[idx].date.weekday]}'),
+                              ][tasks[idx].date.weekday%7]}'),
                             ),
                           );
                         } else {
