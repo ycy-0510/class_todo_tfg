@@ -90,6 +90,7 @@ class HomeBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     TaskState taskState = ref.watch(taskProvider);
+    Map<String, String> usersData = ref.watch(usersProvider);
     List<Task> tasks = taskState.tasks;
     return Center(
       child: Builder(builder: (context) {
@@ -206,7 +207,7 @@ class HomeBody extends ConsumerWidget {
                             '提醒',
                           ][tasks[idx].type]}'),
                           trailing: Text(
-                            tasks[idx].date.toString().split('.')[0],
+                            '${tasks[idx].date.toString().split('.')[0]}\n${usersData[tasks[idx].userId] ?? '未知建立者'}',
                           ),
                           onLongPress: tasks[idx].userId ==
                                   ref.watch(authProvider).user?.uid
@@ -227,23 +228,22 @@ class HomeBody extends ConsumerWidget {
                                 ? true
                                 : tasks[idx].date.day !=
                                     tasks[idx - 1].date.day)) {
-                          return ColoredBox(
+                          return Container(
                             color:
                                 Theme.of(context).colorScheme.tertiaryContainer,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
-                              child: Text(
-                                  '${tasks[idx].date.toString().split(' ')[0]}  週${[
-                                '日',
-                                'ㄧ',
-                                '二',
-                                '三',
-                                '四',
-                                '五',
-                                '六'
-                              ][tasks[idx].date.weekday % 7]}'),
-                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                                '${tasks[idx].date.toString().split(' ')[0]}  週${[
+                              '日',
+                              'ㄧ',
+                              '二',
+                              '三',
+                              '四',
+                              '五',
+                              '六'
+                            ][tasks[idx].date.weekday % 7]}'),
                           );
                         } else {
                           return const Divider();
@@ -500,6 +500,7 @@ class BottomSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     TaskState taskState = ref.watch(taskProvider);
+    Map<String, String> usersData = ref.watch(usersProvider);
     List<Task> tasks = taskState.tasks;
     List<Task> tasksForThisClass = [];
     for (Task task in tasks) {
@@ -555,7 +556,7 @@ class BottomSheet extends ConsumerWidget {
                   subtitle: Text(
                       ['考試', '作業', '報告', '提醒'][tasksForThisClass[idx].type]),
                   trailing: Text(
-                    tasksForThisClass[idx].date.toString().split('.')[0],
+                    '${tasksForThisClass[idx].date.toString().split('.')[0]}\n${usersData[tasksForThisClass[idx].userId] ?? '未知建立者'}',
                   ),
                   onLongPress: tasksForThisClass[idx].userId ==
                           ref.watch(authProvider).user?.uid
