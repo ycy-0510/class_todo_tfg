@@ -174,36 +174,66 @@ class HomeBody extends ConsumerWidget {
                   ListView.builder(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
-                    itemCount: tasks.length,
-                    itemBuilder: (context, idx) {
-                      String lessonName = tasks[idx].classTime == -1
-                          ? '其他時段'
-                          : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
-                      return ListTile(
-                        leading: const Icon(Icons.task_alt),
-                        title: Text(tasks[idx].name),
-                        subtitle: Text('$lessonName ${[
-                          '考試',
-                          '作業',
-                          '報告',
-                          '提醒',
-                        ][tasks[idx].type]}'),
-                        trailing: Text(
-                          tasks[idx].date.toString().split('.')[0],
-                        ),
-                        onLongPress: tasks[idx].userId ==
-                                ref.watch(authProvider).user?.uid
-                            ? () {
-                                ref
-                                    .read(formProvider.notifier)
-                                    .startUpdate(tasks[idx]);
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => const TaskForm(),
-                                );
-                              }
-                            : null,
-                      );
+                    itemCount: tasks.length * 2,
+                    itemBuilder: (context, allIndex) {
+                      int idx = allIndex ~/ 2;
+                      if (allIndex % 2 == 1) {
+                        String lessonName = tasks[idx].classTime == -1
+                            ? '其他時段'
+                            : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
+                        return ListTile(
+                          leading: const Icon(Icons.task_alt),
+                          title: Text(tasks[idx].name),
+                          subtitle: Text('$lessonName ${[
+                            '考試',
+                            '作業',
+                            '報告',
+                            '提醒',
+                          ][tasks[idx].type]}'),
+                          trailing: Text(
+                            tasks[idx].date.toString().split('.')[0],
+                          ),
+                          onLongPress: tasks[idx].userId ==
+                                  ref.watch(authProvider).user?.uid
+                              ? () {
+                                  ref
+                                      .read(formProvider.notifier)
+                                      .startUpdate(tasks[idx]);
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => const TaskForm(),
+                                  );
+                                }
+                              : null,
+                        );
+                      } else {
+                        if (idx != tasks.length - 1 &&
+                            (idx == 0
+                                ? true
+                                : tasks[idx].date.day !=
+                                    tasks[idx - 1].date.day)) {
+                          return ColoredBox(
+                            color:
+                                Theme.of(context).colorScheme.tertiaryContainer,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Text(
+                                  '${tasks[idx].date.toString().split(' ')[0]}  週${[
+                                '日',
+                                'ㄧ',
+                                '二',
+                                '三',
+                                '四',
+                                '五',
+                                '六'
+                              ][tasks[idx].date.weekday]}'),
+                            ),
+                          );
+                        } else {
+                          return const Divider();
+                        }
+                      }
                     },
                   ),
                   const SizedBox(height: 100),
