@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -30,6 +31,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         GoogleAuthProvider googleProvider = GoogleAuthProvider();
         await _auth.signInWithPopup(googleProvider);
+        FirebaseFirestore db = FirebaseFirestore.instance;
+        final data = {
+          "name": state.user!.displayName,
+        };
+        await db.collection("user").doc(state.user!.uid).set(data);
       } catch (err) {
         state = state.load(false);
         _showError(err.toString());
