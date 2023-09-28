@@ -328,6 +328,14 @@ class TaskListView extends ConsumerWidget {
             trailing: Text(
               '${tasks[idx].date.toString().split('.')[0]}\n${usersData[tasks[idx].userId] ?? '未知建立者'}',
             ),
+            onTap: () async {
+              await Clipboard.setData(ClipboardData(text: tasks[idx].name));
+              Fluttertoast.showToast(
+                msg: '已複製',
+                timeInSecForIosWeb: 1,
+                webShowClose: true,
+              );
+            },
             onLongPress: tasks[idx].userId == ref.watch(authProvider).user?.uid
                 ? () {
                     ref.read(formProvider.notifier).startUpdate(tasks[idx]);
