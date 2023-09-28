@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:class_todo_list/class_table.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
@@ -92,12 +90,11 @@ class HomeBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     TaskState taskState = ref.watch(taskProvider);
-    Map<String, String> usersData = ref.watch(usersProvider);
     List<Task> tasks = taskState.tasks;
     List<Task> showTasks = [];
     bool showPast = ref.watch(pastSwitchProvider);
     for (int i = 0; i < tasks.length; i++) {
-      if (tasks[i].date.isAfter(DateTime.now()) || showPast) {
+      if (tasks[i].date.isAfter(ref.watch(nowTimeProvider)) || showPast) {
         showTasks.add(tasks[i]);
       }
     }
@@ -227,69 +224,10 @@ class HomeBody extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  ListView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: showTasks.length * 2,
-                    itemBuilder: (context, allIndex) {
-                      int idx = allIndex ~/ 2;
-                      if (allIndex % 2 == 1) {
-                        String lessonName = showTasks[idx].classTime == -1
-                            ? '其他時段'
-                            : '第${showTasks[idx].classTime + 1}節 ${lesson[(showTasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
-                        return ListTile(
-                          leading: const Icon(Icons.task_alt),
-                          title: Text(showTasks[idx].name),
-                          subtitle: Text('$lessonName ${[
-                            '考試',
-                            '作業',
-                            '報告',
-                            '提醒',
-                          ][showTasks[idx].type]}'),
-                          trailing: Text(
-                            '${showTasks[idx].date.toString().split('.')[0]}\n${usersData[showTasks[idx].userId] ?? '未知建立者'}',
-                          ),
-                          onLongPress: showTasks[idx].userId ==
-                                  ref.watch(authProvider).user?.uid
-                              ? () {
-                                  ref
-                                      .read(formProvider.notifier)
-                                      .startUpdate(showTasks[idx]);
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => const TaskForm(),
-                                  );
-                                }
-                              : null,
-                        );
-                      } else {
-                        if (idx != showTasks.length - 1 &&
-                            (idx == 0
-                                ? true
-                                : showTasks[idx].date.day !=
-                                    showTasks[idx - 1].date.day)) {
-                          return Container(
-                            color:
-                                Theme.of(context).colorScheme.tertiaryContainer,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                                '${showTasks[idx].date.toString().split(' ')[0]}  週${[
-                              '日',
-                              'ㄧ',
-                              '二',
-                              '三',
-                              '四',
-                              '五',
-                              '六'
-                            ][showTasks[idx].date.weekday % 7]}'),
-                          );
-                        } else {
-                          return const Divider();
-                        }
-                      }
-                    },
+                  TaskListView(
+                    showTasks,
+                    showDateTitle: true,
+                    canScroll: false,
                   ),
                   const SizedBox(height: 40),
                   const Padding(
@@ -351,6 +289,80 @@ class HomeBody extends ConsumerWidget {
         return themeData.colorScheme.secondaryContainer;
     }
     return themeData.colorScheme.primaryContainer;
+  }
+}
+
+class TaskListView extends ConsumerWidget {
+  const TaskListView(this.tasks,
+      {this.showDateTitle = false, this.canScroll = true, super.key});
+
+  final bool showDateTitle;
+  final bool canScroll;
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Map<String, String> usersData = ref.watch(usersProvider);
+
+    return ListView.builder(
+      physics: canScroll
+          ? const BouncingScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
+      shrinkWrap: !canScroll,
+      itemCount: tasks.length * 2,
+      itemBuilder: (context, allIndex) {
+        int idx = allIndex ~/ 2;
+        if (allIndex % 2 == 1) {
+          String lessonName = tasks[idx].classTime == -1
+              ? '其他時段'
+              : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
+          return ListTile(
+            leading: const Icon(Icons.task_alt),
+            title: Text(tasks[idx].name),
+            subtitle: Text('$lessonName ${[
+              '考試',
+              '作業',
+              '報告',
+              '提醒',
+            ][tasks[idx].type]}'),
+            trailing: Text(
+              '${tasks[idx].date.toString().split('.')[0]}\n${usersData[tasks[idx].userId] ?? '未知建立者'}',
+            ),
+            onLongPress: tasks[idx].userId == ref.watch(authProvider).user?.uid
+                ? () {
+                    ref.read(formProvider.notifier).startUpdate(tasks[idx]);
+                    showDialog(
+                      context: context,
+                      builder: (context) => const TaskForm(),
+                    );
+                  }
+                : null,
+          );
+        } else {
+          if ((idx == 0
+                  ? true
+                  : tasks[idx].date.day != tasks[idx - 1].date.day) &&
+              showDateTitle) {
+            return Container(
+              color: Theme.of(context).colorScheme.tertiaryContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: Text('${tasks[idx].date.toString().split(' ')[0]}  週${[
+                '日',
+                'ㄧ',
+                '二',
+                '三',
+                '四',
+                '五',
+                '六'
+              ][tasks[idx].date.weekday % 7]}'),
+            );
+          } else {
+            return const Divider();
+          }
+        }
+      },
+    );
   }
 }
 
@@ -558,7 +570,6 @@ class BottomSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     TaskState taskState = ref.watch(taskProvider);
-    Map<String, String> usersData = ref.watch(usersProvider);
     List<Task> tasks = taskState.tasks;
     List<Task> tasksForThisClass = [];
     for (Task task in tasks) {
@@ -604,33 +615,7 @@ class BottomSheet extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: tasksForThisClass.length,
-              physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, idx) {
-                return ListTile(
-                  leading: const Icon(Icons.task_alt),
-                  title: Text(tasksForThisClass[idx].name),
-                  subtitle: Text(
-                      ['考試', '作業', '報告', '提醒'][tasksForThisClass[idx].type]),
-                  trailing: Text(
-                    '${tasksForThisClass[idx].date.toString().split('.')[0]}\n${usersData[tasksForThisClass[idx].userId] ?? '未知建立者'}',
-                  ),
-                  onLongPress: tasksForThisClass[idx].userId ==
-                          ref.watch(authProvider).user?.uid
-                      ? () {
-                          ref
-                              .read(formProvider.notifier)
-                              .startUpdate(tasksForThisClass[idx]);
-                          showDialog(
-                            context: context,
-                            builder: (context) => const TaskForm(),
-                          );
-                        }
-                      : null,
-                );
-              },
-            ),
+            child: TaskListView(tasksForThisClass),
           ),
         ],
       ),
