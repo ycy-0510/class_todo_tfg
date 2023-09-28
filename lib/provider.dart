@@ -40,3 +40,7 @@ final connectivityStatusProvider = StateNotifierProvider.autoDispose<
     ConnectivityStatusNotifier, ConnectivityStatus>((ref) {
   return ConnectivityStatusNotifier();
 });
+
+final pastSwitchProvider = StateProvider.autoDispose<bool>((ref) {
+  return true;
+});

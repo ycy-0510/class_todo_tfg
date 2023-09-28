@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:class_todo_list/class_table.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
@@ -92,6 +94,14 @@ class HomeBody extends ConsumerWidget {
     TaskState taskState = ref.watch(taskProvider);
     Map<String, String> usersData = ref.watch(usersProvider);
     List<Task> tasks = taskState.tasks;
+    List<Task> showTasks = [];
+    bool showPast = ref.watch(pastSwitchProvider);
+    for (int i = 0; i < tasks.length; i++) {
+      if (tasks[i].date.isAfter(DateTime.now()) || showPast) {
+        showTasks.add(tasks[i]);
+      }
+    }
+
     return Center(
       child: Builder(builder: (context) {
         if (ref.watch(connectivityStatusProvider) ==
@@ -187,34 +197,64 @@ class HomeBody extends ConsumerWidget {
                                 ]),
                         ]),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          '整週項目表',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                        Row(
+                          children: [
+                            const Text(
+                              '顯示過去項目',
+                              style: TextStyle(fontSize: 15),
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Switch(
+                              value: showPast,
+                              onChanged: (value) => ref
+                                  .read(pastSwitchProvider.notifier)
+                                  .update((state) => value),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
                   ListView.builder(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
-                    itemCount: tasks.length * 2,
+                    itemCount: showTasks.length * 2,
                     itemBuilder: (context, allIndex) {
                       int idx = allIndex ~/ 2;
                       if (allIndex % 2 == 1) {
-                        String lessonName = tasks[idx].classTime == -1
+                        String lessonName = showTasks[idx].classTime == -1
                             ? '其他時段'
-                            : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
+                            : '第${showTasks[idx].classTime + 1}節 ${lesson[(showTasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
                         return ListTile(
                           leading: const Icon(Icons.task_alt),
-                          title: Text(tasks[idx].name),
+                          title: Text(showTasks[idx].name),
                           subtitle: Text('$lessonName ${[
                             '考試',
                             '作業',
                             '報告',
                             '提醒',
-                          ][tasks[idx].type]}'),
+                          ][showTasks[idx].type]}'),
                           trailing: Text(
-                            '${tasks[idx].date.toString().split('.')[0]}\n${usersData[tasks[idx].userId] ?? '未知建立者'}',
+                            '${showTasks[idx].date.toString().split('.')[0]}\n${usersData[showTasks[idx].userId] ?? '未知建立者'}',
                           ),
-                          onLongPress: tasks[idx].userId ==
+                          onLongPress: showTasks[idx].userId ==
                                   ref.watch(authProvider).user?.uid
                               ? () {
                                   ref
                                       .read(formProvider.notifier)
-                                      .startUpdate(tasks[idx]);
+                                      .startUpdate(showTasks[idx]);
                                   showDialog(
                                     context: context,
                                     builder: (context) => const TaskForm(),
@@ -223,11 +263,11 @@ class HomeBody extends ConsumerWidget {
                               : null,
                         );
                       } else {
-                        if (idx != tasks.length - 1 &&
+                        if (idx != showTasks.length - 1 &&
                             (idx == 0
                                 ? true
-                                : tasks[idx].date.day !=
-                                    tasks[idx - 1].date.day)) {
+                                : showTasks[idx].date.day !=
+                                    showTasks[idx - 1].date.day)) {
                           return Container(
                             color:
                                 Theme.of(context).colorScheme.tertiaryContainer,
@@ -235,7 +275,7 @@ class HomeBody extends ConsumerWidget {
                                 horizontal: 20, vertical: 10),
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             child: Text(
-                                '${tasks[idx].date.toString().split(' ')[0]}  週${[
+                                '${showTasks[idx].date.toString().split(' ')[0]}  週${[
                               '日',
                               'ㄧ',
                               '二',
@@ -243,7 +283,7 @@ class HomeBody extends ConsumerWidget {
                               '四',
                               '五',
                               '六'
-                            ][tasks[idx].date.weekday % 7]}'),
+                            ][showTasks[idx].date.weekday % 7]}'),
                           );
                         } else {
                           return const Divider();
@@ -251,9 +291,9 @@ class HomeBody extends ConsumerWidget {
                       }
                     },
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 40),
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 5),
+                    padding: EdgeInsets.symmetric(vertical: 10),
                     child: Text(
                       '共享聯絡簿 by YCY',
                       textAlign: TextAlign.center,
