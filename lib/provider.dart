@@ -4,6 +4,7 @@ import 'package:class_todo_list/logic/date_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/nowtime_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
+import 'package:class_todo_list/logic/todo_notifier.dart';
 import 'package:class_todo_list/logic/users_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -46,3 +47,6 @@ final pastSwitchProvider = StateProvider.autoDispose<bool>((ref) => false);
 
 final nowTimeProvider = StateNotifierProvider<NowTimeNotifier, DateTime>(
     (ref) => NowTimeNotifier());
+
+final todoProvider = StateNotifierProvider<TodoNotifier, List<String>>(
+    (ref) => TodoNotifier(ref));

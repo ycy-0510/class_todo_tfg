@@ -20,6 +20,7 @@ dependencies:
   flutter_native_splash: ^2.3.2
   go_router: ^11.0.0
   pwa_install: ^0.0.5
+  shared_preferences: ^2.2.1
 
 dev_dependencies:
   flutter_test:

@@ -317,7 +317,12 @@ class TaskListView extends ConsumerWidget {
               ? '其他時段'
               : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
           return ListTile(
-            leading: const Icon(Icons.task_alt),
+            leading: Checkbox(
+              value: ref.watch(todoProvider).contains(tasks[idx].taskId),
+              onChanged: (value) {
+                ref.read(todoProvider.notifier).changeData(tasks[idx].taskId);
+              },
+            ),
             title: Text(tasks[idx].name),
             subtitle: Text('$lessonName ${[
               '考試',
