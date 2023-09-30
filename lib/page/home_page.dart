@@ -2,6 +2,7 @@ import 'package:class_todo_list/class_table.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
+import 'package:class_todo_list/open_url.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,33 +14,12 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    String? userName = ref.watch(authProvider).user?.displayName;
-
     return Scaffold(
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(),
-        title: Column(children: [
-          const Text('共享聯絡簿'),
-          Text(
-            userName ?? '訪客',
-            style: const TextStyle(fontSize: 15),
-          ),
-        ]),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: OutlinedButton.icon(
-              onPressed: () => ref.read(authProvider.notifier).logout(),
-              icon: const Icon(Icons.logout),
-              label: const Text(
-                '登出',
-                style: TextStyle(fontSize: 15),
-              ),
-            ),
-          ),
-        ],
+        title: const Text('共享聯絡簿'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
+          preferredSize: const Size.fromHeight(50),
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
@@ -80,6 +60,97 @@ class HomePage extends ConsumerWidget {
               },
               child: const Icon(Icons.add_task),
             ),
+      drawer: Drawer(
+        child: SafeArea(
+            child: Column(
+          children: [
+            DrawerHeader(
+                child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: ref.watch(authProvider).user?.photoURL == null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: const ColoredBox(
+                            color: Colors.green,
+                            child: Padding(
+                              padding: EdgeInsets.all(5),
+                              child: Icon(
+                                Icons.person,
+                                size: 80,
+                              ),
+                            ),
+                          ),
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: Image.network(
+                            ref.watch(authProvider).user?.photoURL ?? '',
+                            height: 85,
+                          ),
+                        ),
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      ref.watch(authProvider).user?.displayName ?? '訪客',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 5),
+                    OutlinedButton.icon(
+                      onPressed: () => ref.read(authProvider.notifier).logout(),
+                      icon: const Icon(Icons.logout),
+                      label: const Text(
+                        '登出',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('關於這個app'),
+              onTap: () => showAboutDialog(
+                  context: context,
+                  applicationName: '共享聯絡簿',
+                  applicationVersion: '1.3.0',
+                  applicationIcon: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Image.asset(
+                      'assets/img/logo.png',
+                      height: 90,
+                    ),
+                  ),
+                  applicationLegalese:
+                      'Copyright © 2023 YCY, Licensed under the Apache License, Version 2.0.'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.web),
+              title: const Text('官方網頁'),
+              onTap: () => openUrl('https://sites.google.com/view/ycyprogram'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.chat),
+              title: const Text('線上支援'),
+              onTap: () => openUrl('https://tawk.to/ycyprogram'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('開放原始碼'),
+              onTap: () => openUrl('https://github.com/ycy-0510/class_todo'),
+            ),
+            ListTile(
+              title: Image.asset('assets/img/coffee-button.png'),
+              onTap: () => openUrl('https://www.buymeacoffee.com/ckycy'),
+            ),
+          ],
+        )),
+      ),
     );
   }
 }
@@ -314,42 +385,116 @@ class TaskListView extends ConsumerWidget {
         int idx = allIndex ~/ 2;
         if (allIndex % 2 == 1) {
           String lessonName = tasks[idx].classTime == -1
-              ? '其他時段'
+              ? tasks[idx].date.toString().split(' ')[1].substring(0, 5)
               : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
-          return ListTile(
-            leading: Checkbox(
-              value: ref.watch(todoProvider).contains(tasks[idx].taskId),
-              onChanged: (value) {
-                ref.read(todoProvider.notifier).changeData(tasks[idx].taskId);
-              },
-            ),
-            title: Text(tasks[idx].name),
-            subtitle: Text('$lessonName ${[
-              '考試',
-              '作業',
-              '報告',
-              '提醒',
-            ][tasks[idx].type]}'),
-            trailing: Text(
-              '${tasks[idx].date.toString().split('.')[0]}\n${usersData[tasks[idx].userId] ?? '未知建立者'}',
-            ),
-            onTap: () async {
-              await Clipboard.setData(ClipboardData(text: tasks[idx].name));
-              Fluttertoast.showToast(
-                msg: '已複製',
-                timeInSecForIosWeb: 1,
-                webShowClose: true,
-              );
-            },
-            onLongPress: tasks[idx].userId == ref.watch(authProvider).user?.uid
-                ? () {
-                    ref.read(formProvider.notifier).startUpdate(tasks[idx]);
-                    showDialog(
-                      context: context,
-                      builder: (context) => const TaskForm(),
-                    );
-                  }
-                : null,
+          return Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Checkbox(
+                  value: ref.watch(todoProvider).contains(tasks[idx].taskId),
+                  onChanged: (value) {
+                    ref
+                        .read(todoProvider.notifier)
+                        .changeData(tasks[idx].taskId);
+                  },
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tasks[idx].name,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$lessonName ${[
+                        '考試',
+                        '作業',
+                        '報告',
+                        '提醒',
+                      ][tasks[idx].type]}',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    Text(
+                      usersData[tasks[idx].userId] ?? '未知建立者',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                width: 5,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: PopupMenuButton(
+                  itemBuilder: (context) => <PopupMenuEntry>[
+                    const PopupMenuItem(
+                        value: 'copy',
+                        child: Row(
+                          children: [
+                            Icon(Icons.copy),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text('複製項目'),
+                          ],
+                        )),
+                    const PopupMenuItem(
+                        enabled: false,
+                        value: 'star',
+                        child: Row(
+                          children: [
+                            Icon(Icons.star),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text('標記星號'),
+                          ],
+                        )),
+                    PopupMenuItem(
+                        enabled: tasks[idx].userId ==
+                            ref.watch(authProvider).user?.uid,
+                        value: 'edit',
+                        child: const Row(
+                          children: [
+                            Icon(Icons.edit_note),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text('修改'),
+                          ],
+                        )),
+                  ],
+                  onSelected: (value) async {
+                    switch (value) {
+                      case 'edit':
+                        ref.read(formProvider.notifier).startUpdate(tasks[idx]);
+                        showDialog(
+                          context: context,
+                          builder: (context) => const TaskForm(),
+                        );
+                        break;
+                      case 'star':
+                        break;
+                      case 'copy':
+                        await Clipboard.setData(
+                            ClipboardData(text: tasks[idx].name));
+                        Fluttertoast.showToast(
+                          msg: '已複製到剪貼簿',
+                          timeInSecForIosWeb: 1,
+                          webShowClose: true,
+                        );
+                        break;
+                    }
+                  },
+                  tooltip: '更多',
+                ),
+              ),
+            ],
           );
         } else {
           if ((idx == 0
@@ -591,7 +736,12 @@ class BottomSheet extends ConsumerWidget {
       }
     }
 
-    DateTime date = ref.watch(dateProvider).sunday.add(Duration(days: weekDay));
+    DateTime date =
+        ref.watch(dateProvider).sunday.add(Duration(days: weekDay)).copyWith(
+              hour: classTimes[lessonIdx].hour,
+              minute: classTimes[lessonIdx].minute,
+              second: 0,
+            );
 
     return SizedBox(
       height: 400,
@@ -609,18 +759,16 @@ class BottomSheet extends ConsumerWidget {
                 ),
                 if (!ref.watch(authProvider).user!.isAnonymous)
                   IconButton(
-                    onPressed: () {
-                      ref.read(formProvider.notifier).dateChange(DateTime(
-                          date.year,
-                          date.month,
-                          date.day,
-                          classTimes[lessonIdx].hour,
-                          classTimes[lessonIdx].minute));
-                      showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) => const TaskForm());
-                    },
+                    onPressed: ref.watch(nowTimeProvider).isBefore(date)
+                        ? () {
+                            ref.read(formProvider.notifier).dateChange(date);
+                            showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) =>
+                                    const TaskForm());
+                          }
+                        : null,
                     icon: const Icon(Icons.add_task),
                     tooltip: '新增事項在這一節課',
                   ),

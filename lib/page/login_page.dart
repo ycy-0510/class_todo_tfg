@@ -80,8 +80,9 @@ class LoginPage extends ConsumerWidget {
                     ),
                   ),
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-                    child: Text('©2023 YCY'),
+                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                    child: Text(
+                        'Copyright © 2023 YCY, Licensed under the Apache License, Version 2.0.'),
                   )
                 ],
               ),
