@@ -280,15 +280,31 @@ class AnnounceView extends ConsumerWidget {
           child: GestureDetector(
             onTapDown: (details) => ref.read(announceProvider.notifier).pause(),
             onTapUp: (details) => ref.read(announceProvider.notifier).resume(),
-            onDoubleTap: () => ref.read(announceProvider.notifier).next(),
+            onHorizontalDragEnd: (details) {
+              if ((details.primaryVelocity ?? 0) < 0) {
+                ref.read(announceProvider.notifier).next();
+              } else if ((details.primaryVelocity ?? 0) > 0) {
+                ref.read(announceProvider.notifier).prev();
+              }
+            },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  LinearProgressIndicator(
-                    value: timer / 5,
-                    borderRadius: BorderRadius.circular(100),
+                  Row(
+                    children: [
+                      for (int i = 0; i < announces.length; i++)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: LinearProgressIndicator(
+                              value: (i < idx ? 1 : (i > idx ? 0 : timer / 5)),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   Builder(builder: (context) {
                     if (ref.watch(announceProvider).loading) {
