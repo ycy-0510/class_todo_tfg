@@ -1,4 +1,5 @@
 import 'package:class_todo_list/class_table.dart';
+import 'package:class_todo_list/logic/annouce_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
@@ -118,7 +119,7 @@ class HomePage extends ConsumerWidget {
               onTap: () => showAboutDialog(
                   context: context,
                   applicationName: '共享聯絡簿',
-                  applicationVersion: '1.3.0',
+                  applicationVersion: 'V1.3.0',
                   applicationIcon: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Image.asset(
@@ -180,91 +181,8 @@ class HomeBody extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Table(
-                        border: TableBorder.all(color: Colors.blue, width: 2),
-                        children: [
-                          TableRow(children: [
-                            for (int d = 0; d < 5; d++)
-                              Builder(builder: (context) {
-                                DateTime today = ref.watch(dateProvider).now;
-                                DateTime date = ref
-                                    .watch(dateProvider)
-                                    .sunday
-                                    .add(Duration(days: d + 1));
-                                bool isToday = false;
-                                if (date.isBefore(today) &&
-                                    date
-                                        .add(const Duration(days: 1))
-                                        .isAfter(today)) {
-                                  isToday = true;
-                                }
-                                int month = date.month;
-                                int day = date.day;
-                                return Container(
-                                  height: 60,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '$month/$day',
-                                    style: TextStyle(
-                                      fontSize: isToday ? 18 : 15,
-                                      color: isToday ? Colors.blue : null,
-                                      fontWeight:
-                                          isToday ? FontWeight.bold : null,
-                                    ),
-                                  ),
-                                );
-                              }),
-                          ]),
-                          for (int l = 0; l < 7; l++)
-                            TableRow(
-                                decoration: l == 3
-                                    ? const BoxDecoration(
-                                        border: Border(
-                                        bottom: BorderSide(
-                                            width: 5,
-                                            color: Colors.blue,
-                                            strokeAlign:
-                                                BorderSide.strokeAlignInside),
-                                      ))
-                                    : null,
-                                children: [
-                                  for (int d = 0; d < 5; d++)
-                                    Container(
-                                      margin: l == 3
-                                          ? const EdgeInsets.only(bottom: 5)
-                                          : null,
-                                      color: classColor(
-                                          d + 1, l, tasks, Theme.of(context)),
-                                      height: 60,
-                                      alignment: Alignment.center,
-                                      child: TextButton(
-                                        onPressed: () {
-                                          showModalBottomSheet(
-                                              showDragHandle: true,
-                                              context: context,
-                                              builder: (context) => BottomSheet(
-                                                  className: lesson[d * 7 + l],
-                                                  weekDay: d + 1,
-                                                  lessonIdx: l));
-                                        },
-                                        child: Text(
-                                          lesson[d * 7 + l],
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Colors.black
-                                                    : Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ]),
-                        ]),
-                  ),
+                  const AnnounceView(),
+                  TaskTableView(tasks),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 10, horizontal: 20),
@@ -340,6 +258,166 @@ class HomeBody extends ConsumerWidget {
           );
         }
       }),
+    );
+  }
+}
+
+class AnnounceView extends ConsumerWidget {
+  const AnnounceView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Map<String, String> usersData = ref.watch(usersProvider);
+    List<Announce> announces = ref.watch(announceProvider).announces;
+    int idx = ref.watch(announceProvider).idx;
+    double timer = ref.watch(announceProvider).timer;
+
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: SizedBox(
+        child: Card(
+          color: Theme.of(context).colorScheme.tertiaryContainer,
+          child: GestureDetector(
+            onTapDown: (details) => ref.read(announceProvider.notifier).pause(),
+            onTapUp: (details) => ref.read(announceProvider.notifier).resume(),
+            onDoubleTap: () => ref.read(announceProvider.notifier).next(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  LinearProgressIndicator(
+                    value: timer / 5,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  Builder(builder: (context) {
+                    if (ref.watch(announceProvider).loading) {
+                      return const Text('載入中');
+                    } else if (announces.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 10),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.announcement,
+                              size: 40,
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    announces[idx].content,
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                      'by ${usersData[announces[idx].userId] ?? '未知建立者'}')
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      );
+                    } else {
+                      return const Text('太棒了！目前沒有公告。');
+                    }
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TaskTableView extends ConsumerWidget {
+  const TaskTableView(this.tasks, {super.key});
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Table(
+          border: TableBorder.all(color: Colors.blue, width: 2),
+          children: [
+            TableRow(children: [
+              for (int d = 0; d < 5; d++)
+                Builder(builder: (context) {
+                  DateTime today = ref.watch(dateProvider).now;
+                  DateTime date =
+                      ref.watch(dateProvider).sunday.add(Duration(days: d + 1));
+                  bool isToday = false;
+                  if (date.isBefore(today) &&
+                      date.add(const Duration(days: 1)).isAfter(today)) {
+                    isToday = true;
+                  }
+                  int month = date.month;
+                  int day = date.day;
+                  return Container(
+                    height: 60,
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$month/$day',
+                      style: TextStyle(
+                        fontSize: isToday ? 18 : 15,
+                        color: isToday ? Colors.blue : null,
+                        fontWeight: isToday ? FontWeight.bold : null,
+                      ),
+                    ),
+                  );
+                }),
+            ]),
+            for (int l = 0; l < 7; l++)
+              TableRow(
+                  decoration: l == 3
+                      ? const BoxDecoration(
+                          border: Border(
+                          bottom: BorderSide(
+                              width: 5,
+                              color: Colors.blue,
+                              strokeAlign: BorderSide.strokeAlignInside),
+                        ))
+                      : null,
+                  children: [
+                    for (int d = 0; d < 5; d++)
+                      Container(
+                        margin:
+                            l == 3 ? const EdgeInsets.only(bottom: 5) : null,
+                        color: classColor(d + 1, l, tasks, Theme.of(context)),
+                        height: 60,
+                        alignment: Alignment.center,
+                        child: TextButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                                showDragHandle: true,
+                                context: context,
+                                builder: (context) => BottomSheet(
+                                    className: lesson[d * 7 + l],
+                                    weekDay: d + 1,
+                                    lessonIdx: l));
+                          },
+                          child: Text(
+                            lesson[d * 7 + l],
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ]),
+          ]),
     );
   }
 

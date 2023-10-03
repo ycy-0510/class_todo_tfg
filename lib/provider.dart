@@ -1,3 +1,4 @@
+import 'package:class_todo_list/logic/annouce_notifier.dart';
 import 'package:class_todo_list/logic/auth_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/date_notifier.dart';
@@ -30,6 +31,11 @@ final dateProvider = StateNotifierProvider<DateNotifier, DateState>((ref) {
 final taskProvider =
     StateNotifierProvider.autoDispose<TaskNotifier, TaskState>((ref) {
   return TaskNotifier(ref);
+});
+
+final announceProvider =
+    StateNotifierProvider.autoDispose<AnnounceNotifier, AnnounceState>((ref) {
+  return AnnounceNotifier(ref);
 });
 
 final usersProvider =

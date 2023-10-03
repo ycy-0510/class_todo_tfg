@@ -5,7 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 class UsersNotifier extends StateNotifier<Map<String, String>> {
   late FirebaseFirestore db;
-  Ref _ref;
+  final Ref _ref;
   UsersNotifier(this._ref) : super({}) {
     db = FirebaseFirestore.instance;
     getUserData();
