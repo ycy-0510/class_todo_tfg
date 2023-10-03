@@ -281,9 +281,9 @@ class AnnounceView extends ConsumerWidget {
             onTapDown: (details) => ref.read(announceProvider.notifier).pause(),
             onTapUp: (details) => ref.read(announceProvider.notifier).resume(),
             onHorizontalDragEnd: (details) {
-              if ((details.primaryVelocity ?? 0) < 0) {
+              if ((details.primaryVelocity ?? 0) > 0) {
                 ref.read(announceProvider.notifier).next();
-              } else if ((details.primaryVelocity ?? 0) > 0) {
+              } else if ((details.primaryVelocity ?? 0) < 0) {
                 ref.read(announceProvider.notifier).prev();
               }
             },
@@ -299,6 +299,7 @@ class AnnounceView extends ConsumerWidget {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 2),
                             child: LinearProgressIndicator(
+                              backgroundColor: Colors.grey,
                               value: (i < idx ? 1 : (i > idx ? 0 : timer / 5)),
                               borderRadius: BorderRadius.circular(100),
                             ),
