@@ -1,4 +1,5 @@
 import 'package:class_todo_list/class_table.dart';
+import 'package:class_todo_list/logic/annouce_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
@@ -20,36 +21,45 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(),
         title: const Text('共享聯絡簿'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  onPressed: () => ref.read(dateProvider.notifier).lastWeek(),
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  tooltip: '上週',
+        bottom: ref.watch(bottomTabProvider) == 1
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(50),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      IconButton(
+                        onPressed: () =>
+                            ref.read(dateProvider.notifier).lastWeek(),
+                        icon: const Icon(Icons.arrow_back_ios_new),
+                        tooltip: '上週',
+                      ),
+                      OutlinedButton(
+                          onPressed: () =>
+                              ref.read(dateProvider.notifier).today(),
+                          child: const Text(
+                            '今天',
+                            style: TextStyle(fontSize: 18),
+                          )),
+                      IconButton(
+                        onPressed: () =>
+                            ref.read(dateProvider.notifier).nextWeek(),
+                        icon: const Icon(Icons.arrow_forward_ios),
+                        tooltip: '下週',
+                      ),
+                    ],
+                  ),
                 ),
-                OutlinedButton(
-                    onPressed: () => ref.read(dateProvider.notifier).today(),
-                    child: const Text(
-                      '今天',
-                      style: TextStyle(fontSize: 18),
-                    )),
-                IconButton(
-                  onPressed: () => ref.read(dateProvider.notifier).nextWeek(),
-                  icon: const Icon(Icons.arrow_forward_ios),
-                  tooltip: '下週',
-                ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
-      body: const HomeBody(),
-      floatingActionButton: ref.watch(authProvider).user!.isAnonymous
+      body: [
+        const HomeTaskBody(),
+        const HomeAnnounceBody()
+      ][ref.watch(bottomTabProvider)],
+      floatingActionButton: ref.watch(bottomTabProvider) == 1 ||
+              ref.watch(authProvider).user!.isAnonymous
           ? null
           : FloatingActionButton(
               tooltip: '新增事項',
@@ -62,6 +72,16 @@ class HomePage extends ConsumerWidget {
               },
               child: const Icon(Icons.add_task),
             ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: ref.watch(bottomTabProvider),
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.task_alt_outlined), label: '所有項目'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.announcement_outlined), label: '最新公告'),
+        ],
+        onTap: (value) => ref.read(bottomTabProvider.notifier).state = value,
+      ),
       drawer: Drawer(
         child: SafeArea(
             child: Column(
@@ -157,8 +177,8 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-class HomeBody extends ConsumerWidget {
-  const HomeBody({super.key});
+class HomeTaskBody extends ConsumerWidget {
+  const HomeTaskBody({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -205,6 +225,7 @@ class HomeBody extends ConsumerWidget {
                   TaskListView(
                     importantTasks,
                     canScroll: false,
+                    short: true,
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
@@ -303,6 +324,110 @@ class HomeBody extends ConsumerWidget {
           );
         }
       }),
+    );
+  }
+}
+
+class HomeAnnounceBody extends ConsumerWidget {
+  const HomeAnnounceBody({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    TextEditingController controller = TextEditingController();
+
+    AnnounceState announceState = ref.watch(announceProvider);
+    Map<String, String> usersData = ref.watch(usersProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView.builder(
+              itemCount: announceState.announces.length,
+              itemBuilder: (context, idx) => Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.person,
+                          size: 40,
+                        ),
+                        Expanded(
+                            child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 5, horizontal: 10),
+                              child: Text(usersData[
+                                      announceState.announces[idx].userId] ??
+                                  '未知建立者'),
+                            ),
+                            Card(
+                              color: Colors.blue,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                child: Text(
+                                  announceState.announces[idx].content,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ),
+                            )
+                          ],
+                        )),
+                        Text(announceState.announces[idx].dateTime
+                            .toString()
+                            .substring(0, 16)
+                            .replaceAll(' ', '\n'))
+                      ],
+                    ),
+                  )),
+        ),
+        ColoredBox(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                    child: TextField(
+                  maxLines: 2,
+                  minLines: 1,
+                  maxLength: 100,
+                  controller: controller,
+                  readOnly: ref.watch(authProvider).user!.isAnonymous,
+                  decoration: InputDecoration(
+                    hintText: ref.watch(authProvider).user!.isAnonymous
+                        ? '您沒有權限'
+                        : '要公告的內容',
+                    border: const OutlineInputBorder(),
+                  ),
+                )),
+                const SizedBox(
+                  width: 20,
+                ),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(),
+                  onPressed: ref.watch(authProvider).user!.isAnonymous
+                      ? null
+                      : () {
+                          if (controller.text.isNotEmpty) {
+                            ref
+                                .read(announceProvider.notifier)
+                                .sendData(controller.text);
+                            controller.text = '';
+                          }
+                        },
+                  icon: const Icon(Icons.send),
+                  label: const Text('公告'),
+                )
+              ],
+            ),
+          ),
+        )
+      ],
     );
   }
 }
@@ -413,10 +538,14 @@ class TaskTableView extends ConsumerWidget {
 
 class TaskListView extends ConsumerWidget {
   const TaskListView(this.tasks,
-      {this.showDateTitle = false, this.canScroll = true, super.key});
+      {this.showDateTitle = false,
+      this.canScroll = true,
+      this.short = false,
+      super.key});
 
   final bool showDateTitle;
   final bool canScroll;
+  final bool short;
   final List<Task> tasks;
 
   @override
@@ -469,19 +598,21 @@ class TaskListView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '$lessonName ${[
-                        '考試',
-                        '作業',
-                        '報告',
-                        '提醒',
-                      ][tasks[idx].type]}',
-                      style: const TextStyle(fontSize: 15),
-                    ),
-                    Text(
-                      usersData[tasks[idx].userId] ?? '未知建立者',
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    if (!short)
+                      Text(
+                        '$lessonName ${[
+                          '考試',
+                          '作業',
+                          '報告',
+                          '提醒',
+                        ][tasks[idx].type]}',
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                    if (!short)
+                      Text(
+                        usersData[tasks[idx].userId] ?? '未知建立者',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                   ],
                 ),
               ),
@@ -647,7 +778,11 @@ class _TaskFormState extends ConsumerState<TaskForm> {
             children: [
               TextFormField(
                 controller: _controller,
-                decoration: const InputDecoration(hintText: '項目名稱'),
+                decoration: const InputDecoration(
+                  hintText: '請輸入完整，如：英文U1單字',
+                  hintStyle: TextStyle(height: 2),
+                  labelText: '項目名稱',
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty || value.length < 2) {
                     return '請輸入項目名稱';

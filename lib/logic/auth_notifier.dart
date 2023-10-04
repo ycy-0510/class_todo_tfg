@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
   late FirebaseAuth _auth;
+
   AuthNotifier() : super(AuthState()) {
     _auth = FirebaseAuth.instance;
     if (_auth.currentUser != null) {
