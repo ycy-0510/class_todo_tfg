@@ -17,9 +17,9 @@ class AnnounceNotifier extends StateNotifier<AnnounceState> {
         getData();
       }
     });
-    Timer.periodic(const Duration(milliseconds: 20), (timer) {
+    Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!state.pause) {
-        state = state.copyWith(timer: (state.timer + 0.02));
+        state = state.copyWith(timer: (state.timer + 0.1));
         if (state.timer >= 5) {
           state = state.copyWith(
               timer: 0, idx: (state.idx + 1) % state.announces.length);
