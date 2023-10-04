@@ -33,10 +33,10 @@ final taskProvider =
   return TaskNotifier(ref);
 });
 
-// final announceProvider =
-//     StateNotifierProvider.autoDispose<AnnounceNotifier, AnnounceState>((ref) {
-//   return AnnounceNotifier(ref);
-// });
+final announceProvider =
+    StateNotifierProvider.autoDispose<AnnounceNotifier, AnnounceState>((ref) {
+  return AnnounceNotifier(ref);
+});
 
 final usersProvider =
     StateNotifierProvider.autoDispose<UsersNotifier, Map<String, String>>(
