@@ -31,13 +31,15 @@ class AnnounceNotifier extends StateNotifier<AnnounceState> {
 
   void sendData(String text) {
     if (text.isNotEmpty) {
-      db.collection('announce').add({
-        'content': text,
-        'userId': _ref.read(authProvider).user!.uid,
-        'date': FieldValue.serverTimestamp()
-      }).catchError((e) {
+      try {
+        db.collection('announce').add({
+          'content': text,
+          'userId': _ref.read(authProvider).user!.uid,
+          'date': FieldValue.serverTimestamp()
+        });
+      } catch (e) {
         _showError(e.toString());
-      });
+      }
     }
   }
 

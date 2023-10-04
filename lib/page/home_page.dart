@@ -390,6 +390,7 @@ class HomeAnnounceBody extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                     child: TextField(
@@ -399,11 +400,11 @@ class HomeAnnounceBody extends ConsumerWidget {
                   controller: controller,
                   readOnly: ref.watch(authProvider).user!.isAnonymous,
                   decoration: InputDecoration(
-                    hintText: ref.watch(authProvider).user!.isAnonymous
-                        ? '您沒有權限'
-                        : '要公告的內容',
-                    border: const OutlineInputBorder(),
-                  ),
+                      hintText: ref.watch(authProvider).user!.isAnonymous
+                          ? '您沒有權限'
+                          : '要公告的內容',
+                      border: const OutlineInputBorder(),
+                      counter: null),
                 )),
                 const SizedBox(
                   width: 20,
