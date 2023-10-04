@@ -79,6 +79,7 @@ class Task {
   int type;
   DateTime date;
   int classTime;
+  bool top;
   String userId;
   String taskId;
   Task({
@@ -86,6 +87,7 @@ class Task {
     required this.type,
     required this.date,
     required this.classTime,
+    required this.top,
     required this.userId,
     required this.taskId,
   });
@@ -100,8 +102,16 @@ class Task {
       type: data?['type'],
       date: data?['date'].toDate(),
       classTime: toClassTime(data?['date'].toDate()),
+      top: data?['top'],
       userId: data?['userId'],
       taskId: snapshot.id,
     );
+  }
+
+  void pinTop() {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    db.collection('task').doc(taskId).update({
+      'top': !top,
+    });
   }
 }

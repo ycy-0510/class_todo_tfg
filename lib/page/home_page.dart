@@ -1,5 +1,4 @@
 import 'package:class_todo_list/class_table.dart';
-import 'package:class_todo_list/logic/annouce_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
@@ -15,7 +14,6 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(announceProvider);
     ref.watch(usersProvider);
 
     return Scaffold(
@@ -167,10 +165,16 @@ class HomeBody extends ConsumerWidget {
     TaskState taskState = ref.watch(taskProvider);
     List<Task> tasks = taskState.tasks;
     List<Task> showTasks = [];
+    List<Task> importantTasks = [];
     bool showPast = ref.watch(pastSwitchProvider);
     for (int i = 0; i < tasks.length; i++) {
       if (tasks[i].date.isAfter(ref.watch(nowTimeProvider)) || showPast) {
         showTasks.add(tasks[i]);
+      }
+    }
+    for (int i = 0; i < tasks.length; i++) {
+      if (tasks[i].date.isAfter(ref.watch(nowTimeProvider)) && tasks[i].top) {
+        importantTasks.add(tasks[i]);
       }
     }
 
@@ -184,7 +188,38 @@ class HomeBody extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AnnounceView(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 10,
+                      children: [
+                        Icon(Icons.push_pin),
+                        Text(
+                          '置頂',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TaskListView(
+                    importantTasks,
+                    canScroll: false,
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 10,
+                      children: [
+                        Icon(Icons.table_chart),
+                        Text(
+                          '整週課表',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ],
+                    ),
+                  ),
                   TaskTableView(tasks),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -192,9 +227,16 @@ class HomeBody extends ConsumerWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          '整週項目表',
-                          style: TextStyle(fontSize: 20),
+                        const Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 10,
+                          children: [
+                            Icon(Icons.list),
+                            Text(
+                              '整週項目表',
+                              style: TextStyle(fontSize: 20),
+                            ),
+                          ],
                         ),
                         Row(
                           children: [
@@ -261,98 +303,6 @@ class HomeBody extends ConsumerWidget {
           );
         }
       }),
-    );
-  }
-}
-
-class AnnounceView extends ConsumerWidget {
-  const AnnounceView({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    Map<String, String> usersData = ref.watch(usersProvider);
-    List<Announce> announces = ref.watch(announceProvider).announces;
-    int idx = ref.watch(announceProvider).idx;
-    double timer = ref.watch(announceProvider).timer;
-
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: SizedBox(
-        child: Card(
-          color: Theme.of(context).colorScheme.tertiaryContainer,
-          child: GestureDetector(
-            onTapDown: (details) => ref.read(announceProvider.notifier).pause(),
-            onTapUp: (details) => ref.read(announceProvider.notifier).resume(),
-            onHorizontalDragEnd: (details) {
-              if ((details.primaryVelocity ?? 0) > 0) {
-                ref.read(announceProvider.notifier).next();
-              } else if ((details.primaryVelocity ?? 0) < 0) {
-                ref.read(announceProvider.notifier).prev();
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      for (int i = 0; i < announces.length; i++)
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: LinearProgressIndicator(
-                              backgroundColor: Colors.grey,
-                              value: (i < idx ? 1 : (i > idx ? 0 : timer / 5)),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  Builder(builder: (context) {
-                    if (ref.watch(announceProvider).loading) {
-                      return const Text('載入中');
-                    } else if (announces.isNotEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 10),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.announcement,
-                              size: 40,
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                    announces[idx].content,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                      'by ${usersData[announces[idx].userId] ?? '未知建立者'}')
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      );
-                    } else {
-                      return const Text('太棒了！目前沒有公告。');
-                    }
-                  }),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -502,9 +452,21 @@ class TaskListView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      tasks[idx].name,
-                      style: const TextStyle(fontSize: 18),
+                    Wrap(
+                      spacing: 5,
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      children: [
+                        if (tasks[idx].top)
+                          const Icon(
+                            Icons.push_pin,
+                            color: Colors.red,
+                            size: 25,
+                          ),
+                        Text(
+                          tasks[idx].name,
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -530,6 +492,21 @@ class TaskListView extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: PopupMenuButton(
                   itemBuilder: (context) => <PopupMenuEntry>[
+                    PopupMenuItem(
+                        enabled: tasks[idx].userId ==
+                            ref.watch(authProvider).user?.uid,
+                        value: 'top',
+                        child: Row(
+                          children: [
+                            Icon(tasks[idx].top
+                                ? Icons.push_pin_outlined
+                                : Icons.push_pin),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Text(tasks[idx].top ? '取消置頂' : '置頂'),
+                          ],
+                        )),
                     const PopupMenuItem(
                         value: 'copy',
                         child: Row(
@@ -569,6 +546,9 @@ class TaskListView extends ConsumerWidget {
                   ],
                   onSelected: (value) async {
                     switch (value) {
+                      case 'top':
+                        tasks[idx].pinTop();
+                        break;
                       case 'edit':
                         ref.read(formProvider.notifier).startUpdate(tasks[idx]);
                         showDialog(
