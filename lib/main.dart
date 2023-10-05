@@ -49,6 +49,16 @@ class MainApp extends ConsumerWidget {
             seedColor: Colors.green, brightness: Brightness.dark),
         useMaterial3: true,
       ),
+      highContrastTheme: ThemeData.from(
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green, brightness: Brightness.light),
+        useMaterial3: true,
+      ),
+      highContrastDarkTheme: ThemeData.from(
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green, brightness: Brightness.dark),
+        useMaterial3: true,
+      ),
       themeMode: ThemeMode.system,
       title: '共享聯絡簿',
       localizationsDelegates: const [
