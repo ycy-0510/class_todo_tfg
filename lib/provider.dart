@@ -1,4 +1,5 @@
 import 'package:class_todo_list/logic/annouce_notifier.dart';
+import 'package:class_todo_list/logic/announceRead_notifier.dart';
 import 'package:class_todo_list/logic/auth_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/date_notifier.dart';
@@ -56,5 +57,9 @@ final nowTimeProvider = StateNotifierProvider<NowTimeNotifier, DateTime>(
 
 final todoProvider = StateNotifierProvider<TodoNotifier, List<String>>(
     (ref) => TodoNotifier(ref));
+
+final announceReadProvider =
+    StateNotifierProvider<AnnounceReadNotifier, String>(
+        (ref) => AnnounceReadNotifier());
 
 final bottomTabProvider = StateProvider<int>((ref) => 0);

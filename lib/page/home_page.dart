@@ -7,6 +7,7 @@ import 'package:class_todo_list/open_url.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -24,7 +25,7 @@ class HomePage extends ConsumerWidget {
         bottom: ref.watch(bottomTabProvider) == 1
             ? null
             : PreferredSize(
-                preferredSize: const Size.fromHeight(50),
+                preferredSize: const Size.fromHeight(60),
                 child: Padding(
                   padding: const EdgeInsets.all(10),
                   child: Row(
@@ -74,13 +75,34 @@ class HomePage extends ConsumerWidget {
             ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: ref.watch(bottomTabProvider),
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
               icon: Icon(Icons.task_alt_outlined), label: '所有項目'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.announcement_outlined), label: '最新公告'),
+              icon: Builder(builder: (context) {
+                bool showNewMsg = false;
+                if (ref.watch(announceProvider).announces.isNotEmpty) {
+                  if (ref.watch(announceReadProvider) !=
+                      ref.watch(announceProvider).announces.last.announceId) {
+                    showNewMsg = true;
+                  }
+                }
+                return Badge(
+                  label: showNewMsg ? const Text('N') : null,
+                  isLabelVisible: showNewMsg,
+                  child: const Icon(Icons.announcement_outlined),
+                );
+              }),
+              label: '最新公告'),
         ],
-        onTap: (value) => ref.read(bottomTabProvider.notifier).state = value,
+        onTap: (value) {
+          ref.read(bottomTabProvider.notifier).state = value;
+          if (value == 1) {
+            ref
+                .watch(announceReadProvider.notifier)
+                .readMsg(ref.watch(announceProvider).announces.last.announceId);
+          }
+        },
       ),
       drawer: Drawer(
         child: SafeArea(
@@ -338,6 +360,14 @@ class HomeAnnounceBody extends ConsumerWidget {
     AnnounceState announceState = ref.watch(announceProvider);
     Map<String, String> usersData = ref.watch(usersProvider);
 
+    ref.listen(announceProvider, (previous, next) {
+      if (next.announces.isNotEmpty) {
+        ref
+            .read(announceReadProvider.notifier)
+            .readMsg(next.announces.last.announceId);
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -365,13 +395,19 @@ class HomeAnnounceBody extends ConsumerWidget {
                                   '未知建立者'),
                             ),
                             Card(
-                              color: Colors.blue,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.blue.shade300
+                                  : Colors.blue,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 5),
-                                child: Text(
-                                  announceState.announces[idx].content,
+                                child: Linkify(
+                                  onOpen: (link) async => openUrl(link.url),
+                                  text: announceState.announces[idx].content,
                                   style: const TextStyle(fontSize: 18),
+                                  linkStyle: const TextStyle(
+                                      fontSize: 18, color: Colors.yellow),
                                 ),
                               ),
                             )
@@ -400,11 +436,13 @@ class HomeAnnounceBody extends ConsumerWidget {
                   controller: controller,
                   readOnly: ref.watch(authProvider).user!.isAnonymous,
                   decoration: InputDecoration(
-                      hintText: ref.watch(authProvider).user!.isAnonymous
-                          ? '您沒有權限'
-                          : '要公告的內容',
-                      border: const OutlineInputBorder(),
-                      counter: null),
+                    labelText: ref.watch(authProvider).user!.isAnonymous
+                        ? '您沒有權限'
+                        : '要公告的內容',
+                    hintText: '輸入連結請輸入完整(https://google.com)',
+                    border: const OutlineInputBorder(),
+                    counter: const SizedBox(),
+                  ),
                 )),
                 const SizedBox(
                   width: 20,
