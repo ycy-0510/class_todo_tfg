@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-List<String> lesson = [
+const List<String> lesson = [
   //w1
   '資訊',
   '資訊',
@@ -54,3 +54,5 @@ const List<TimeOfDay> classTimes = [
   TimeOfDay(hour: 15, minute: 10),
   TimeOfDay(hour: 16, minute: 10),
 ];
+
+List<int> numbersOfClass = List.generate(37, (idx) => idx + 1);

@@ -5,6 +5,7 @@ import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/date_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/nowtime_notifier.dart';
+import 'package:class_todo_list/logic/submit_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
 import 'package:class_todo_list/logic/todo_notifier.dart';
 import 'package:class_todo_list/logic/users_notifier.dart';
@@ -37,6 +38,11 @@ final taskProvider =
 final announceProvider =
     StateNotifierProvider.autoDispose<AnnounceNotifier, AnnounceState>((ref) {
   return AnnounceNotifier(ref);
+});
+
+final submittedProvider =
+    StateNotifierProvider.autoDispose<SubmittedNotifier, SubmittedState>((ref) {
+  return SubmittedNotifier(ref);
 });
 
 final usersProvider =

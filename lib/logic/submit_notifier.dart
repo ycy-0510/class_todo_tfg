@@ -1,30 +1,15 @@
 import 'dart:async';
 
-import 'package:class_todo_list/class_config.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-int toClassTime(DateTime dateTime) {
-  TimeOfDay time = TimeOfDay.fromDateTime(dateTime);
-  for (int i = 0; i < classTimes.length - 1; i++) {
-    if (classTimes[i].hour * 60 + classTimes[i].minute <=
-            time.hour * 60 + time.minute &&
-        classTimes[i + 1].hour * 60 + classTimes[i + 1].minute >
-            time.hour * 60 + time.minute) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-class TaskNotifier extends StateNotifier<TaskState> {
+class SubmittedNotifier extends StateNotifier<SubmittedState> {
   late FirebaseFirestore db;
   final Ref _ref;
   StreamSubscription<QuerySnapshot>? listener;
-  TaskNotifier(this._ref) : super(TaskState([])) {
+  SubmittedNotifier(this._ref) : super(SubmittedState([])) {
     db = FirebaseFirestore.instance;
     getData();
     _ref.listen(dateProvider, (previous, next) {
@@ -33,21 +18,21 @@ class TaskNotifier extends StateNotifier<TaskState> {
   }
 
   void getData() {
-    state = TaskState([], loading: true);
+    state = SubmittedState([], loading: true);
     final dataRef = db
         .collection("task")
         .where("date",
             isLessThanOrEqualTo:
-                _ref.read(dateProvider).sunday.add(const Duration(days: 7)))
-        .where("date", isGreaterThanOrEqualTo: _ref.read(dateProvider).sunday);
+                _ref.read(dateProvider).now.add(const Duration(days: 7)))
+        .where('type', isEqualTo: 4);
     listener?.cancel();
     listener = dataRef.snapshots().listen(
       (data) {
-        List<Task> tasks = [];
+        List<Submitted> submittedItem = [];
         for (var docSnapshot in data.docs) {
-          tasks.add(Task.fromFirestore(docSnapshot));
+          submittedItem.add(Submitted.fromFirestore(docSnapshot));
         }
-        state = TaskState(tasks);
+        state = SubmittedState(submittedItem);
       },
       onError: (e) => _showError(e.toString()),
     );
@@ -68,50 +53,49 @@ class TaskNotifier extends StateNotifier<TaskState> {
   }
 }
 
-class TaskState {
-  List<Task> tasks;
+class SubmittedState {
+  List<Submitted> submittedItems;
   bool loading;
-  TaskState(this.tasks, {this.loading = false});
+  SubmittedState(this.submittedItems, {this.loading = false});
 }
 
-class Task {
+class Submitted {
   String name;
-  int type;
   DateTime date;
-  int classTime;
-  bool top;
   String userId;
-  String taskId;
-  Task({
+  String submittedId;
+  List<String> done;
+  Submitted({
     required this.name,
-    required this.type,
     required this.date,
-    required this.classTime,
-    required this.top,
     required this.userId,
-    required this.taskId,
+    required this.submittedId,
+    required this.done,
   });
 
-  factory Task.fromFirestore(
+  factory Submitted.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot, [
     SnapshotOptions? options,
   ]) {
     final data = snapshot.data();
-    return Task(
+    return Submitted(
       name: data?['name'],
-      type: data?['type'],
       date: data?['date'].toDate(),
-      classTime: toClassTime(data?['date'].toDate()),
-      top: data?['top'],
       userId: data?['userId'],
-      taskId: snapshot.id,
+      submittedId: snapshot.id,
+      done: (data?['submitted'] as List).map((e) => e.toString()).toList(),
     );
   }
 
-  void pinTop() {
+  void update(String doneName) {
+    if (done.contains(doneName)) {
+      done.remove(doneName);
+    } else {
+      done.add(doneName);
+    }
     FirebaseFirestore db = FirebaseFirestore.instance;
-    db.collection('task').doc(taskId).update({
-      'top': !top,
+    db.collection('task').doc(submittedId).update({
+      'submitted': done,
     });
   }
 }

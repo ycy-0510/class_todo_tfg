@@ -1,9 +1,11 @@
-import 'package:class_todo_list/class_table.dart';
+import 'package:class_todo_list/class_config.dart';
 import 'package:class_todo_list/logic/annouce_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
+import 'package:class_todo_list/logic/submit_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
 import 'package:class_todo_list/open_url.dart';
+import 'package:class_todo_list/page/users_page.dart';
 import 'package:class_todo_list/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +24,7 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(),
         title: const Text('共享聯絡簿'),
-        bottom: ref.watch(bottomTabProvider) == 1
+        bottom: ref.watch(bottomTabProvider) != 0
             ? null
             : PreferredSize(
                 preferredSize: const Size.fromHeight(60),
@@ -57,9 +59,10 @@ class HomePage extends ConsumerWidget {
       ),
       body: [
         const HomeTaskBody(),
+        const HomeSubmittedBody(),
         const HomeAnnounceBody()
       ][ref.watch(bottomTabProvider)],
-      floatingActionButton: ref.watch(bottomTabProvider) == 1 ||
+      floatingActionButton: ref.watch(bottomTabProvider) != 0 ||
               ref.watch(authProvider).user!.isAnonymous
           ? null
           : FloatingActionButton(
@@ -78,6 +81,8 @@ class HomePage extends ConsumerWidget {
         items: [
           const BottomNavigationBarItem(
               icon: Icon(Icons.task_alt_outlined), label: '所有項目'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.text_snippet_outlined), label: '繳交列表'),
           BottomNavigationBarItem(
               icon: Builder(builder: (context) {
                 bool showNewMsg = false;
@@ -97,7 +102,7 @@ class HomePage extends ConsumerWidget {
         ],
         onTap: (value) {
           ref.read(bottomTabProvider.notifier).state = value;
-          if (value == 1) {
+          if (value == 2) {
             ref.watch(announceReadProvider.notifier).readMsg(
                 ref.watch(announceProvider).announces.first.announceId);
           }
@@ -156,6 +161,13 @@ class HomePage extends ConsumerWidget {
               ],
             )),
             ListTile(
+              enabled: !ref.watch(authProvider).user!.isAnonymous,
+              leading: const Icon(Icons.people),
+              title: const Text('成員'),
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const UsersPage())),
+            ),
+            ListTile(
               leading: const Icon(Icons.info),
               title: const Text('關於這個app'),
               onTap: () => showAboutDialog(
@@ -198,6 +210,53 @@ class HomePage extends ConsumerWidget {
   }
 }
 
+class LoadingView extends ConsumerWidget {
+  const LoadingView({required this.loading, required this.child, super.key});
+
+  final bool loading;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(connectivityStatusProvider) ==
+        ConnectivityStatus.isConnected) {
+      if (!loading) {
+        return child;
+      } else {
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(
+                height: 20,
+              ),
+              Text('共享聯絡簿 by YCY'),
+            ],
+          ),
+        );
+      }
+    } else {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: 50,
+            ),
+            Text('您已離線，請連接網路以繼續使用'),
+            SizedBox(
+              height: 20,
+            ),
+            Text('共享聯絡簿 by YCY'),
+          ],
+        ),
+      );
+    }
+  }
+}
+
 class HomeTaskBody extends ConsumerWidget {
   const HomeTaskBody({super.key});
 
@@ -219,132 +278,176 @@ class HomeTaskBody extends ConsumerWidget {
       }
     }
 
-    return Center(
-      child: Builder(builder: (context) {
-        if (ref.watch(connectivityStatusProvider) ==
-            ConnectivityStatus.isConnected) {
-          if (!taskState.loading) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+    return LoadingView(
+      loading: taskState.loading,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Icon(Icons.push_pin),
-                        Text(
-                          '置頂',
-                          style: TextStyle(fontSize: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TaskListView(
-                    importantTasks,
-                    canScroll: false,
-                    short: true,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Icon(Icons.table_chart),
-                        Text(
-                          '整週課表',
-                          style: TextStyle(fontSize: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TaskTableView(tasks),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 10,
-                          children: [
-                            Icon(Icons.list),
-                            Text(
-                              '整週項目表',
-                              style: TextStyle(fontSize: 20),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Text(
-                              '顯示過去項目',
-                              style: TextStyle(fontSize: 15),
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Switch(
-                              value: showPast,
-                              onChanged: (value) => ref
-                                  .read(pastSwitchProvider.notifier)
-                                  .update((state) => value),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                  TaskListView(
-                    showTasks,
-                    showDateTitle: true,
-                    canScroll: false,
-                  ),
-                  const SizedBox(height: 40),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      '共享聯絡簿 by YCY',
-                      textAlign: TextAlign.center,
-                    ),
+                  Icon(Icons.push_pin),
+                  Text(
+                    '置頂',
+                    style: TextStyle(fontSize: 20),
                   ),
                 ],
               ),
-            );
-          } else {
-            return const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(
-                  height: 20,
-                ),
-                Text('共享聯絡簿 by YCY'),
-              ],
-            );
-          }
-        } else {
-          return const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.cloud_off,
-                size: 50,
+            ),
+            TaskListView(
+              importantTasks,
+              canScroll: false,
+              short: true,
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
+                children: [
+                  Icon(Icons.table_chart),
+                  Text(
+                    '整週課表',
+                    style: TextStyle(fontSize: 20),
+                  ),
+                ],
               ),
-              Text('您已離線，請連接網路以繼續使用'),
-              SizedBox(
-                height: 20,
+            ),
+            TaskTableView(tasks),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 10,
+                    children: [
+                      Icon(Icons.list),
+                      Text(
+                        '整週項目表',
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text(
+                        '顯示過去項目',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      Switch(
+                        value: showPast,
+                        onChanged: (value) => ref
+                            .read(pastSwitchProvider.notifier)
+                            .update((state) => value),
+                      ),
+                    ],
+                  )
+                ],
               ),
-              Text('共享聯絡簿 by YCY'),
-            ],
-          );
-        }
-      }),
+            ),
+            TaskListView(
+              showTasks,
+              showDateTitle: true,
+              canScroll: false,
+            ),
+            const SizedBox(height: 40),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                '共享聯絡簿 by YCY',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HomeSubmittedBody extends ConsumerWidget {
+  const HomeSubmittedBody({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    SubmittedState submittedState = ref.watch(submittedProvider);
+    Map<String, String> usersData = ref.watch(usersProvider);
+    return LoadingView(
+      loading: submittedState.loading,
+      child: ListView.builder(
+        itemCount: submittedState.submittedItems.length,
+        itemBuilder: (context, idx) {
+          Submitted submitted = submittedState.submittedItems[idx];
+          return ListTile(
+              title: Text(
+                  '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}'),
+              subtitle: Text(
+                  '${usersData[submitted.userId]} 截止：${submitted.date.toString().substring(0, 16)}'),
+              onTap: () => showDialog(
+                    context: context,
+                    builder: (context) => SubmittedDone(submitted.submittedId),
+                  ));
+        },
+      ),
+    );
+  }
+}
+
+class SubmittedDone extends ConsumerWidget {
+  const SubmittedDone(this.submittedId, {super.key});
+
+  final String submittedId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    SubmittedState submittedState = ref.watch(submittedProvider);
+    bool available = true;
+    Submitted submitted = submittedState.submittedItems.firstWhere(
+      (element) => element.submittedId == submittedId,
+      orElse: () {
+        available = false;
+        return Submitted(
+            name: '',
+            date: DateTime.now(),
+            userId: '',
+            submittedId: submittedId,
+            done: []);
+      },
+    );
+    return Dialog.fullscreen(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
+            style: const TextStyle(fontSize: 25),
+          ),
+        ),
+        body: available
+            ? ListView.builder(
+                itemCount: numbersOfClass.length,
+                itemBuilder: (context, idx) {
+                  return CheckboxListTile(
+                      title: Text('${numbersOfClass[idx]}號'),
+                      value: submitted.done.contains('${numbersOfClass[idx]}'),
+                      onChanged: (value) {
+                        submitted.update('${numbersOfClass[idx]}');
+                      });
+                },
+              )
+            : const Center(
+                child: Text('發生錯誤！'),
+              ),
+      ),
     );
   }
 }
@@ -367,113 +470,120 @@ class HomeAnnounceBody extends ConsumerWidget {
       }
     });
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            reverse: true,
-            physics: const BouncingScrollPhysics(),
-            child: ListView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
+    return LoadingView(
+      loading: announceState.loading,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
               reverse: true,
-              itemCount: announceState.announces.length,
-              itemBuilder: (context, idx) => Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.person,
-                      size: 40,
-                    ),
-                    Expanded(
+              physics: const BouncingScrollPhysics(),
+              child: ListView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                reverse: true,
+                itemCount: announceState.announces.length,
+                itemBuilder: (context, idx) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person,
+                        size: 40,
+                      ),
+                      Expanded(
                         child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 10),
-                          child: Text(
-                              usersData[announceState.announces[idx].userId] ??
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 5, horizontal: 10),
+                              child: Text(usersData[
+                                      announceState.announces[idx].userId] ??
                                   '未知建立者'),
-                        ),
-                        Card(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Colors.blue.shade300
-                                  : Colors.blue,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            child: Linkify(
-                              onOpen: (link) async => openUrl(link.url),
-                              text: announceState.announces[idx].content,
-                              style: const TextStyle(fontSize: 18),
-                              linkStyle: const TextStyle(
-                                  fontSize: 18, color: Colors.yellow),
                             ),
-                          ),
-                        )
-                      ],
-                    )),
-                    Text(announceState.announces[idx].dateTime
-                        .toString()
-                        .substring(0, 16)
-                        .replaceAll(' ', '\n'))
-                  ],
+                            Card(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.blue.shade200
+                                  : Colors.blue,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                child: Linkify(
+                                  onOpen: (link) async => openUrl(link.url),
+                                  text: announceState.announces[idx].content,
+                                  style: const TextStyle(fontSize: 18),
+                                  linkStyle: const TextStyle(
+                                      fontSize: 18, color: Colors.yellow),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      Text(
+                        announceState.announces[idx].dateTime
+                            .toString()
+                            .substring(0, 16)
+                            .replaceAll(' ', '\n'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        ColoredBox(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                    child: TextField(
-                  maxLines: 2,
-                  minLines: 1,
-                  maxLength: 100,
-                  controller: controller,
-                  readOnly: ref.watch(authProvider).user!.isAnonymous,
-                  decoration: InputDecoration(
-                    labelText: ref.watch(authProvider).user!.isAnonymous
-                        ? '您沒有權限'
-                        : '要公告的內容',
-                    hintText: '如：記得帶視力回條',
-                    border: const OutlineInputBorder(),
-                    counter: const SizedBox(),
+          ColoredBox(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                      child: TextField(
+                    maxLines: 2,
+                    minLines: 1,
+                    maxLength: 100,
+                    controller: controller,
+                    readOnly: ref.watch(authProvider).user!.isAnonymous,
+                    decoration: InputDecoration(
+                      labelText: ref.watch(authProvider).user!.isAnonymous
+                          ? '您沒有權限'
+                          : '要公告的內容',
+                      hintText: '如：記得帶視力回條',
+                      border: const OutlineInputBorder(),
+                      counter: const SizedBox(),
+                    ),
+                  )),
+                  const SizedBox(
+                    width: 20,
                   ),
-                )),
-                const SizedBox(
-                  width: 20,
-                ),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(),
-                  onPressed: ref.watch(authProvider).user!.isAnonymous
-                      ? null
-                      : () {
-                          if (controller.text.isNotEmpty) {
-                            ref
-                                .read(announceProvider.notifier)
-                                .sendData(controller.text);
-                            controller.text = '';
-                          }
-                        },
-                  icon: const Icon(Icons.send),
-                  label: const Text('公告'),
-                )
-              ],
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(),
+                    onPressed: ref.watch(authProvider).user!.isAnonymous
+                        ? null
+                        : () {
+                            if (controller.text.isNotEmpty) {
+                              ref
+                                  .read(announceProvider.notifier)
+                                  .sendData(controller.text);
+                              controller.text = '';
+                            }
+                          },
+                    icon: const Icon(Icons.send),
+                    label: const Text('公告'),
+                  )
+                ],
+              ),
             ),
-          ),
-        )
-      ],
+          )
+        ],
+      ),
     );
   }
 }
