@@ -651,6 +651,7 @@ class TaskListView extends ConsumerWidget {
                           '作業',
                           '報告',
                           '提醒',
+                          '繳交',
                         ][tasks[idx].type]}',
                         style: const TextStyle(fontSize: 15),
                       ),
@@ -859,7 +860,18 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                       value: 3,
                       child: Text('提醒'),
                     ),
+                    DropdownMenuItem<int>(
+                      value: 4,
+                      child: Text('繳交'),
+                    ),
                   ]),
+              const Padding(
+                padding: EdgeInsets.only(top: 2, bottom: 8),
+                child: Text(
+                  '需清點繳交物品請由「幹部」選擇繳交',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

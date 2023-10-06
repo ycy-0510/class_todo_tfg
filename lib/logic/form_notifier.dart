@@ -33,7 +33,9 @@ class TaskFormNotifier extends StateNotifier<TaskFormState> {
       "name": state.name,
       "type": state.type,
       "date": state.date,
-      "userId": _ref.read(authProvider).user?.uid
+      "userId": _ref.read(authProvider).user?.uid,
+      "top": false,
+      "submitted": [],
     };
     try {
       await db.collection("task").add(data);
@@ -50,6 +52,7 @@ class TaskFormNotifier extends StateNotifier<TaskFormState> {
       "name": state.name,
       "type": state.type,
       "date": state.date,
+      if (state.type != 4) 'submitted': [],
     };
     try {
       await db.collection("task").doc(state.taskId).update(data);
