@@ -83,7 +83,7 @@ class HomePage extends ConsumerWidget {
                 bool showNewMsg = false;
                 if (ref.watch(announceProvider).announces.isNotEmpty) {
                   if (ref.watch(announceReadProvider) !=
-                      ref.watch(announceProvider).announces.last.announceId) {
+                      ref.watch(announceProvider).announces.first.announceId) {
                     showNewMsg = true;
                   }
                 }
@@ -98,9 +98,8 @@ class HomePage extends ConsumerWidget {
         onTap: (value) {
           ref.read(bottomTabProvider.notifier).state = value;
           if (value == 1) {
-            ref
-                .watch(announceReadProvider.notifier)
-                .readMsg(ref.watch(announceProvider).announces.last.announceId);
+            ref.watch(announceReadProvider.notifier).readMsg(
+                ref.watch(announceProvider).announces.first.announceId);
           }
         },
       ),
@@ -364,7 +363,7 @@ class HomeAnnounceBody extends ConsumerWidget {
       if (next.announces.isNotEmpty) {
         ref
             .read(announceReadProvider.notifier)
-            .readMsg(next.announces.last.announceId);
+            .readMsg(next.announces.first.announceId);
       }
     });
 
