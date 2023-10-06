@@ -16,7 +16,8 @@ class AnnounceNotifier extends StateNotifier<AnnounceState> {
 
   void getData() {
     state = AnnounceState([], loading: true);
-    final dataRef = db.collection("announce").limit(20).orderBy('date');
+    final dataRef =
+        db.collection("announce").orderBy('date', descending: true).limit(20);
     listener?.cancel();
     listener = dataRef.snapshots().listen(
       (data) {

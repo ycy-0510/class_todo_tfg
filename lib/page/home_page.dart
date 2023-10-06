@@ -372,54 +372,62 @@ class HomeAnnounceBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: ListView.builder(
+          child: SingleChildScrollView(
+            reverse: true,
+            physics: const BouncingScrollPhysics(),
+            child: ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              reverse: true,
               itemCount: announceState.announces.length,
               itemBuilder: (context, idx) => Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    child: Row(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person,
+                      size: 40,
+                    ),
+                    Expanded(
+                        child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.person,
-                          size: 40,
-                        ),
-                        Expanded(
-                            child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              child: Text(usersData[
-                                      announceState.announces[idx].userId] ??
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 10),
+                          child: Text(
+                              usersData[announceState.announces[idx].userId] ??
                                   '未知建立者'),
-                            ),
-                            Card(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.light
+                        ),
+                        Card(
+                          color:
+                              Theme.of(context).brightness == Brightness.light
                                   ? Colors.blue.shade300
                                   : Colors.blue,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
-                                child: Linkify(
-                                  onOpen: (link) async => openUrl(link.url),
-                                  text: announceState.announces[idx].content,
-                                  style: const TextStyle(fontSize: 18),
-                                  linkStyle: const TextStyle(
-                                      fontSize: 18, color: Colors.yellow),
-                                ),
-                              ),
-                            )
-                          ],
-                        )),
-                        Text(announceState.announces[idx].dateTime
-                            .toString()
-                            .substring(0, 16)
-                            .replaceAll(' ', '\n'))
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            child: Linkify(
+                              onOpen: (link) async => openUrl(link.url),
+                              text: announceState.announces[idx].content,
+                              style: const TextStyle(fontSize: 18),
+                              linkStyle: const TextStyle(
+                                  fontSize: 18, color: Colors.yellow),
+                            ),
+                          ),
+                        )
                       ],
-                    ),
-                  )),
+                    )),
+                    Text(announceState.announces[idx].dateTime
+                        .toString()
+                        .substring(0, 16)
+                        .replaceAll(' ', '\n'))
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
         ColoredBox(
           color: Theme.of(context).colorScheme.secondaryContainer,
@@ -439,7 +447,7 @@ class HomeAnnounceBody extends ConsumerWidget {
                     labelText: ref.watch(authProvider).user!.isAnonymous
                         ? '您沒有權限'
                         : '要公告的內容',
-                    hintText: '輸入連結請輸入完整(https://google.com)',
+                    hintText: '如：記得帶視力回條',
                     border: const OutlineInputBorder(),
                     counter: const SizedBox(),
                   ),

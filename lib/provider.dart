@@ -1,5 +1,5 @@
 import 'package:class_todo_list/logic/annouce_notifier.dart';
-import 'package:class_todo_list/logic/announceRead_notifier.dart';
+import 'package:class_todo_list/logic/announce_read_notifier.dart';
 import 'package:class_todo_list/logic/auth_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
 import 'package:class_todo_list/logic/date_notifier.dart';
