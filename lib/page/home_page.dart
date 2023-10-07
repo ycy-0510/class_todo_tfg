@@ -410,8 +410,13 @@ class HomeSubmittedBody extends ConsumerWidget {
                         ? null
                         : Colors.red),
               ),
-              subtitle: Text(
-                  '${usersData[submitted.userId] ?? '未知使用者'} 截止：${submitted.date.toString().substring(0, 16)}'),
+              subtitle: Wrap(
+                spacing: 5,
+                children: [
+                  Text(usersData[submitted.userId] ?? '未知使用者'),
+                  Text('截止日期：${submitted.date.toString().substring(0, 16)}'),
+                ],
+              ),
               trailing: !usersNumber.values
                       .contains(ref.watch(authProvider).user!.displayName)
                   ? null
@@ -459,8 +464,83 @@ class SubmittedDone extends ConsumerWidget {
         appBar: AppBar(
           title: Text(
             '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
-            style: const TextStyle(fontSize: 25),
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: IconButton(
+                onPressed: submitted.userId != ref.watch(authProvider).user!.uid
+                    ? null
+                    : () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            TextEditingController _controller =
+                                TextEditingController();
+                            return SimpleDialog(
+                              contentPadding: const EdgeInsets.all(20),
+                              title: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('發送繳交通知'),
+                                  IconButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        ref
+                                            .read(formProvider.notifier)
+                                            .editFinish();
+                                      },
+                                      icon: const Icon(Icons.close))
+                                ],
+                              ),
+                              children: [
+                                SizedBox(
+                                  width: 300,
+                                  child: TextFormField(
+                                    controller: _controller,
+                                    maxLines: 2,
+                                    minLines: 1,
+                                    decoration: const InputDecoration(
+                                        hintText: '如：請繳交給班長',
+                                        hintStyle: TextStyle(height: 2),
+                                        labelText: '其他提醒內容(選填)',
+                                        helperText: '通知已包含名單，這裡只需要輸入其他的提醒內容！',
+                                        helperStyle:
+                                            TextStyle(color: Colors.red)),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Fluttertoast.showToast(
+                                      msg: '傳送中',
+                                      timeInSecForIosWeb: 1,
+                                      webShowClose: true,
+                                    );
+                                    Navigator.of(context).pop();
+                                    ref
+                                        .read(announceProvider.notifier)
+                                        .sendData(
+                                          '${submitted.name}請於${submitted.date.toString().substring(0, 16)}前繳交，缺交名單：\n${numbersOfClass.where((e) => !submitted.done.contains(e.toString())).toList().join('、')}\n${_controller.text}',
+                                        );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('傳送'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                icon: const Icon(Icons.announcement),
+                tooltip: '發送繳交題提醒',
+              ),
+            )
+          ],
         ),
         body: available
             ? ListView.builder(
