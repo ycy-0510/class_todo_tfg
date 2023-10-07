@@ -19,6 +19,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(usersProvider);
+    ref.watch(usersNumberProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -380,6 +381,7 @@ class HomeSubmittedBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    Map<String, String> usersNumber = ref.watch(usersNumberProvider);
     SubmittedState submittedState = ref.watch(submittedProvider);
     Map<String, String> usersData = ref.watch(usersProvider);
     return LoadingView(
@@ -388,11 +390,37 @@ class HomeSubmittedBody extends ConsumerWidget {
         itemCount: submittedState.submittedItems.length,
         itemBuilder: (context, idx) {
           Submitted submitted = submittedState.submittedItems[idx];
+          bool done = submitted.done.contains(usersNumber.keys.firstWhere(
+              (k) =>
+                  usersNumber[k] == ref.watch(authProvider).user!.displayName,
+              orElse: () => ''));
           return ListTile(
+              leading: Icon(Icons.text_snippet_outlined,
+                  color: done ||
+                          !usersNumber.values.contains(
+                              ref.watch(authProvider).user!.displayName)
+                      ? null
+                      : Colors.red),
               title: Text(
-                  '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}'),
+                '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
+                style: TextStyle(
+                    color: done ||
+                            !usersNumber.values.contains(
+                                ref.watch(authProvider).user!.displayName)
+                        ? null
+                        : Colors.red),
+              ),
               subtitle: Text(
-                  '${usersData[submitted.userId]} 截止：${submitted.date.toString().substring(0, 16)}'),
+                  '${usersData[submitted.userId] ?? '未知使用者'} 截止：${submitted.date.toString().substring(0, 16)}'),
+              trailing: !usersNumber.values
+                      .contains(ref.watch(authProvider).user!.displayName)
+                  ? null
+                  : Text(
+                      done ? '已繳交' : '缺交',
+                      style: TextStyle(
+                          fontSize: 15,
+                          color: done ? Colors.green : Colors.red),
+                    ),
               onTap: () => showDialog(
                     context: context,
                     builder: (context) => SubmittedDone(submitted.submittedId),
@@ -424,6 +452,8 @@ class SubmittedDone extends ConsumerWidget {
             done: []);
       },
     );
+    Map<String, String> usersNumber = ref.watch(usersNumberProvider);
+
     return Dialog.fullscreen(
       child: Scaffold(
         appBar: AppBar(
@@ -436,11 +466,28 @@ class SubmittedDone extends ConsumerWidget {
             ? ListView.builder(
                 itemCount: numbersOfClass.length,
                 itemBuilder: (context, idx) {
+                  bool checked =
+                      submitted.done.contains('${numbersOfClass[idx]}');
                   return CheckboxListTile(
-                      title: Text('${numbersOfClass[idx]}號'),
-                      value: submitted.done.contains('${numbersOfClass[idx]}'),
+                      title: Text(
+                        '${numbersOfClass[idx]}號 ${usersNumber[numbersOfClass[idx].toString()] ?? ''}',
+                        style: TextStyle(
+                            color:
+                                usersNumber[numbersOfClass[idx].toString()] ==
+                                        (ref
+                                                .watch(authProvider)
+                                                .user!
+                                                .displayName ??
+                                            '')
+                                    ? (checked ? Colors.green : Colors.red)
+                                    : null),
+                      ),
+                      value: checked,
                       onChanged: (value) {
-                        submitted.update('${numbersOfClass[idx]}');
+                        if (submitted.userId ==
+                            ref.watch(authProvider).user!.uid) {
+                          submitted.update('${numbersOfClass[idx]}');
+                        }
                       });
                 },
               )
@@ -989,7 +1036,12 @@ class _TaskFormState extends ConsumerState<TaskForm> {
                     onPressed: () {
                       showDatePicker(
                               context: context,
-                              initialDate: ref.read(formProvider).date,
+                              initialDate: ref
+                                      .read(formProvider)
+                                      .date
+                                      .isBefore(DateTime.now())
+                                  ? DateTime.now()
+                                  : ref.read(formProvider).date,
                               firstDate: DateTime.now(),
                               lastDate:
                                   DateTime.now().add(const Duration(days: 150)))

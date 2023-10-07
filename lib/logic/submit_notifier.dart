@@ -22,8 +22,8 @@ class SubmittedNotifier extends StateNotifier<SubmittedState> {
     final dataRef = db
         .collection("task")
         .where("date",
-            isLessThanOrEqualTo:
-                _ref.read(dateProvider).now.add(const Duration(days: 7)))
+            isGreaterThanOrEqualTo:
+                _ref.read(dateProvider).now.subtract(const Duration(days: 7)))
         .where('type', isEqualTo: 4);
     listener?.cancel();
     listener = dataRef.snapshots().listen(

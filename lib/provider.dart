@@ -9,6 +9,7 @@ import 'package:class_todo_list/logic/submit_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
 import 'package:class_todo_list/logic/todo_notifier.dart';
 import 'package:class_todo_list/logic/users_notifier.dart';
+import 'package:class_todo_list/logic/users_number_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final toastProvider = StateProvider<String>(
@@ -49,6 +50,12 @@ final usersProvider =
     StateNotifierProvider.autoDispose<UsersNotifier, Map<String, String>>(
         (ref) {
   return UsersNotifier(ref);
+});
+
+final usersNumberProvider =
+    StateNotifierProvider.autoDispose<UsersNumberNotifier, Map<String, String>>(
+        (ref) {
+  return UsersNumberNotifier(ref);
 });
 
 final connectivityStatusProvider = StateNotifierProvider.autoDispose<
