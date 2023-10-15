@@ -1,17 +1,20 @@
 import 'package:class_todo_list/class_config.dart';
 import 'package:class_todo_list/logic/annouce_notifier.dart';
 import 'package:class_todo_list/logic/connectivety_notifier.dart';
+import 'package:class_todo_list/logic/file_notifier.dart';
 import 'package:class_todo_list/logic/form_notifier.dart';
 import 'package:class_todo_list/logic/submit_notifier.dart';
 import 'package:class_todo_list/logic/task_notifier.dart';
 import 'package:class_todo_list/open_url.dart';
 import 'package:class_todo_list/page/users_page.dart';
 import 'package:class_todo_list/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:photo_view/photo_view.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -25,6 +28,17 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(),
         title: const Text('共享聯絡簿'),
+        actions: [
+          if (ref.watch(bottomTabProvider) == 3)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: IconButton(
+                onPressed: () => ref.read(fileProvider.notifier).getFilesList(),
+                icon: const Icon(Icons.refresh),
+                tooltip: '重新載入',
+              ),
+            )
+        ],
         bottom: ref.watch(bottomTabProvider) != 0
             ? null
             : PreferredSize(
@@ -61,23 +75,56 @@ class HomePage extends ConsumerWidget {
       body: [
         const HomeTaskBody(),
         const HomeSubmittedBody(),
-        const HomeAnnounceBody()
+        const HomeAnnounceBody(),
+        const HomeFileView(),
       ][ref.watch(bottomTabProvider)],
-      floatingActionButton: ref.watch(bottomTabProvider) != 0 ||
+      floatingActionButton: ![0, 3].contains(ref.watch(bottomTabProvider)) ||
               ref.watch(authProvider).user!.isAnonymous
           ? null
-          : FloatingActionButton(
-              tooltip: '新增事項',
-              onPressed: () {
-                ref.read(formProvider.notifier).dateChange(DateTime.now());
-                showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (BuildContext context) => const TaskForm());
-              },
-              child: const Icon(Icons.add_task),
-            ),
+          : Builder(builder: (context) {
+              switch (ref.watch(bottomTabProvider)) {
+                case 0:
+                  return FloatingActionButton(
+                    tooltip: '新增事項',
+                    onPressed: () {
+                      ref
+                          .read(formProvider.notifier)
+                          .dateChange(DateTime.now());
+                      showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) => const TaskForm());
+                    },
+                    child: const Icon(Icons.add_task),
+                  );
+                case 3:
+                  return FloatingActionButton(
+                    tooltip: '上傳檔案',
+                    onPressed: () async {
+                      try {
+                        var picked = await FilePicker.platform
+                            .pickFiles(type: FileType.media);
+                        if (picked != null) {
+                          if (picked.files.first.size / (1024 * 1024) <= 4) {
+                            ref.read(fileProvider.notifier).uploadFile(
+                                picked.files.first.bytes!,
+                                picked.files.first.name);
+                          } else {
+                            Fluttertoast.showToast(msg: '檔案過大');
+                          }
+                        }
+                      } catch (e) {
+                        Fluttertoast.showToast(msg: e.toString());
+                      }
+                    },
+                    child: const Icon(Icons.file_upload_outlined),
+                  );
+                default:
+                  return const SizedBox();
+              }
+            }),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: ref.watch(bottomTabProvider),
         items: [
           const BottomNavigationBarItem(
@@ -100,6 +147,8 @@ class HomePage extends ConsumerWidget {
                 );
               }),
               label: '最新公告'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.file_open), label: '共享檔案'),
         ],
         onTap: (value) {
           ref.read(bottomTabProvider.notifier).state = value;
@@ -395,41 +444,39 @@ class HomeSubmittedBody extends ConsumerWidget {
                   usersNumber[k] == ref.watch(authProvider).user!.displayName,
               orElse: () => ''));
           return ListTile(
-              leading: Icon(Icons.text_snippet_outlined,
+            leading: Icon(Icons.text_snippet_outlined,
+                color: done ||
+                        !usersNumber.values
+                            .contains(ref.watch(authProvider).user!.displayName)
+                    ? null
+                    : Colors.red),
+            title: Text(
+              '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
+              style: TextStyle(
                   color: done ||
                           !usersNumber.values.contains(
                               ref.watch(authProvider).user!.displayName)
                       ? null
                       : Colors.red),
-              title: Text(
-                '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
-                style: TextStyle(
-                    color: done ||
-                            !usersNumber.values.contains(
-                                ref.watch(authProvider).user!.displayName)
-                        ? null
-                        : Colors.red),
-              ),
-              subtitle: Wrap(
-                spacing: 5,
-                children: [
-                  Text(usersData[submitted.userId] ?? '未知使用者'),
-                  Text('截止日期：${submitted.date.toString().substring(0, 16)}'),
-                ],
-              ),
-              trailing: !usersNumber.values
-                      .contains(ref.watch(authProvider).user!.displayName)
-                  ? null
-                  : Text(
-                      done ? '已繳交' : '缺交',
-                      style: TextStyle(
-                          fontSize: 15,
-                          color: done ? Colors.green : Colors.red),
-                    ),
-              onTap: () => showDialog(
-                    context: context,
-                    builder: (context) => SubmittedDone(submitted.submittedId),
-                  ));
+            ),
+            subtitle: Wrap(
+              spacing: 5,
+              children: [
+                Text(usersData[submitted.userId] ?? '未知使用者'),
+                Text('截止日期：${submitted.date.toString().substring(0, 16)}'),
+              ],
+            ),
+            trailing: !usersNumber.values
+                    .contains(ref.watch(authProvider).user!.displayName)
+                ? null
+                : Text(
+                    done ? '已繳交' : '缺交',
+                    style: TextStyle(
+                        fontSize: 15, color: done ? Colors.green : Colors.red),
+                  ),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => SubmittedDone(submitted.submittedId))),
+          );
         },
       ),
     );
@@ -459,122 +506,113 @@ class SubmittedDone extends ConsumerWidget {
     );
     Map<String, String> usersNumber = ref.watch(usersNumberProvider);
 
-    return Dialog.fullscreen(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: IconButton(
-                onPressed: submitted.userId != ref.watch(authProvider).user!.uid
-                    ? null
-                    : () {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            TextEditingController _controller =
-                                TextEditingController();
-                            return SimpleDialog(
-                              contentPadding: const EdgeInsets.all(20),
-                              title: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text('發送繳交通知'),
-                                  IconButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        ref
-                                            .read(formProvider.notifier)
-                                            .editFinish();
-                                      },
-                                      icon: const Icon(Icons.close))
-                                ],
-                              ),
-                              children: [
-                                SizedBox(
-                                  width: 300,
-                                  child: TextFormField(
-                                    controller: _controller,
-                                    maxLines: 2,
-                                    minLines: 1,
-                                    decoration: const InputDecoration(
-                                        hintText: '如：請繳交給班長',
-                                        hintStyle: TextStyle(height: 2),
-                                        labelText: '其他提醒內容(選填)',
-                                        helperText: '通知已包含名單，這裡只需要輸入其他的提醒內容！',
-                                        helperStyle:
-                                            TextStyle(color: Colors.red)),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Fluttertoast.showToast(
-                                      msg: '傳送中',
-                                      timeInSecForIosWeb: 1,
-                                      webShowClose: true,
-                                    );
-                                    Navigator.of(context).pop();
-                                    ref
-                                        .read(announceProvider.notifier)
-                                        .sendData(
-                                          '${submitted.name}請於${submitted.date.toString().substring(0, 16)}前繳交，缺交名單：\n${numbersOfClass.where((e) => !submitted.done.contains(e.toString())).toList().join('、')}\n${_controller.text}',
-                                        );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text('傳送'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                icon: const Icon(Icons.announcement),
-                tooltip: '發送繳交題提醒',
-              ),
-            )
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          '${submitted.name} ${submitted.done.length}/${numbersOfClass.length}',
         ),
-        body: available
-            ? ListView.builder(
-                itemCount: numbersOfClass.length,
-                itemBuilder: (context, idx) {
-                  bool checked =
-                      submitted.done.contains('${numbersOfClass[idx]}');
-                  return CheckboxListTile(
-                      title: Text(
-                        '${numbersOfClass[idx]}號 ${usersNumber[numbersOfClass[idx].toString()] ?? ''}',
-                        style: TextStyle(
-                            color:
-                                usersNumber[numbersOfClass[idx].toString()] ==
-                                        (ref
-                                                .watch(authProvider)
-                                                .user!
-                                                .displayName ??
-                                            '')
-                                    ? (checked ? Colors.green : Colors.red)
-                                    : null),
-                      ),
-                      value: checked,
-                      onChanged: (value) {
-                        if (submitted.userId ==
-                            ref.watch(authProvider).user!.uid) {
-                          submitted.update('${numbersOfClass[idx]}');
-                        }
-                      });
-                },
-              )
-            : const Center(
-                child: Text('發生錯誤！'),
-              ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: IconButton(
+              onPressed: submitted.userId != ref.watch(authProvider).user!.uid
+                  ? null
+                  : () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          TextEditingController _controller =
+                              TextEditingController();
+                          return SimpleDialog(
+                            contentPadding: const EdgeInsets.all(20),
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('發送繳交通知'),
+                                IconButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      ref
+                                          .read(formProvider.notifier)
+                                          .editFinish();
+                                    },
+                                    icon: const Icon(Icons.close))
+                              ],
+                            ),
+                            children: [
+                              SizedBox(
+                                width: 300,
+                                child: TextFormField(
+                                  controller: _controller,
+                                  maxLines: 2,
+                                  minLines: 1,
+                                  decoration: const InputDecoration(
+                                      hintText: '如：請繳交給班長',
+                                      hintStyle: TextStyle(height: 2),
+                                      labelText: '其他提醒內容(選填)',
+                                      helperText: '通知已包含名單，這裡只需要輸入其他的提醒內容！',
+                                      helperStyle:
+                                          TextStyle(color: Colors.red)),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Fluttertoast.showToast(
+                                    msg: '傳送中',
+                                    timeInSecForIosWeb: 1,
+                                    webShowClose: true,
+                                  );
+                                  Navigator.of(context).pop();
+                                  ref.read(announceProvider.notifier).sendData(
+                                        '${submitted.name}請於${submitted.date.toString().substring(0, 16)}前繳交，缺交名單：\n${numbersOfClass.where((e) => !submitted.done.contains(e.toString())).toList().join('、')}\n${_controller.text}',
+                                      );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('傳送'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+              icon: const Icon(Icons.announcement),
+              tooltip: '發送繳交題提醒',
+            ),
+          )
+        ],
       ),
+      body: available
+          ? ListView.builder(
+              itemCount: numbersOfClass.length,
+              itemBuilder: (context, idx) {
+                bool checked =
+                    submitted.done.contains('${numbersOfClass[idx]}');
+                return CheckboxListTile(
+                    title: Text(
+                      '${numbersOfClass[idx]}號 ${usersNumber[numbersOfClass[idx].toString()] ?? ''}',
+                      style: TextStyle(
+                          color: usersNumber[numbersOfClass[idx].toString()] ==
+                                  (ref.watch(authProvider).user!.displayName ??
+                                      '')
+                              ? (checked ? Colors.green : Colors.red)
+                              : null),
+                    ),
+                    value: checked,
+                    onChanged: (value) {
+                      if (submitted.userId ==
+                          ref.watch(authProvider).user!.uid) {
+                        submitted.update('${numbersOfClass[idx]}');
+                      }
+                    });
+              },
+            )
+          : const Center(
+              child: Text('發生錯誤！'),
+            ),
     );
   }
 }
@@ -1293,6 +1331,115 @@ class BottomSheet extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class HomeFileView extends ConsumerWidget {
+  const HomeFileView({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    FileState state = ref.watch(fileProvider);
+    return LoadingView(
+      loading: state.loading,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: RefreshIndicator(
+          onRefresh: () => ref.read(fileProvider.notifier).getFilesList(),
+          child: GridView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: state.files.length,
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 250,
+            ),
+            itemBuilder: (context, idx) => Padding(
+              padding: const EdgeInsets.all(5),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: FutureBuilder(
+                      future: state.files[idx].getDownloadURL(),
+                      builder: (context, snap) {
+                        return InkWell(
+                          onTap: () async {
+                            if (['.png', '.jpg', '.jpeg', '.webp'].any(
+                                (element) =>
+                                    state.files[idx].name.contains(element))) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => PhotoViewer(
+                                        state.files[idx].name.substring(24),
+                                        snap.data ?? '')),
+                              );
+                            } else {
+                              openUrl(snap.data ?? '');
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            child: Column(
+                              children: [
+                                Expanded(child: Builder(builder: (context) {
+                                  if (['.png', '.jpg', '.jpeg', '.webp'].any(
+                                      (element) => state.files[idx].name
+                                          .contains(element))) {
+                                    return Builder(builder: (context) {
+                                      if (snap.hasData) {
+                                        return Image.network(
+                                          snap.data ?? '',
+                                          fit: BoxFit.cover,
+                                        );
+                                      } else {
+                                        return const Icon(
+                                          Icons.photo,
+                                          size: 100,
+                                        );
+                                      }
+                                    });
+                                  } else {
+                                    return const Icon(
+                                      Icons.file_open,
+                                      size: 100,
+                                    );
+                                  }
+                                })),
+                                Text(
+                                  state.files[idx].name.substring(24),
+                                  maxLines: 2,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PhotoViewer extends ConsumerWidget {
+  const PhotoViewer(this.name, this.url, {super.key});
+
+  final String name;
+  final String url;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          name,
+          style: const TextStyle(fontSize: 15),
+        ),
+      ),
+      body: PhotoView(imageProvider: NetworkImage(url)),
     );
   }
 }
