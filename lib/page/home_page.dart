@@ -521,7 +521,7 @@ class SubmittedDone extends ConsumerWidget {
                       showDialog(
                         context: context,
                         builder: (context) {
-                          TextEditingController _controller =
+                          TextEditingController controller =
                               TextEditingController();
                           return SimpleDialog(
                             contentPadding: const EdgeInsets.all(20),
@@ -543,7 +543,7 @@ class SubmittedDone extends ConsumerWidget {
                               SizedBox(
                                 width: 300,
                                 child: TextFormField(
-                                  controller: _controller,
+                                  controller: controller,
                                   maxLines: 2,
                                   minLines: 1,
                                   decoration: const InputDecoration(
@@ -565,7 +565,7 @@ class SubmittedDone extends ConsumerWidget {
                                   );
                                   Navigator.of(context).pop();
                                   ref.read(announceProvider.notifier).sendData(
-                                        '${submitted.name}請於${submitted.date.toString().substring(0, 16)}前繳交，缺交名單：\n${numbersOfClass.where((e) => !submitted.done.contains(e.toString())).toList().join('、')}\n${_controller.text}',
+                                        '${submitted.name}請於${submitted.date.toString().substring(0, 16)}前繳交，缺交名單：\n${numbersOfClass.where((e) => !submitted.done.contains(e.toString())).toList().join('、')}\n${controller.text}',
                                       );
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -670,10 +670,9 @@ class HomeAnnounceBody extends ConsumerWidget {
                                   '未知建立者'),
                             ),
                             Card(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.blue.shade200
-                                  : Colors.blue,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .tertiaryContainer,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 5),
@@ -682,7 +681,7 @@ class HomeAnnounceBody extends ConsumerWidget {
                                   text: announceState.announces[idx].content,
                                   style: const TextStyle(fontSize: 18),
                                   linkStyle: const TextStyle(
-                                      fontSize: 18, color: Colors.yellow),
+                                      fontSize: 18, color: Colors.blue),
                                 ),
                               ),
                             )
@@ -759,26 +758,31 @@ class TaskTableView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final borderRadius = BorderRadius.circular(10);
+
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Table(
-          border: TableBorder.all(color: Colors.blue, width: 2),
-          children: [
-            TableRow(children: [
-              for (int d = 0; d < 5; d++)
-                Builder(builder: (context) {
-                  DateTime today = ref.watch(dateProvider).now;
-                  DateTime date =
-                      ref.watch(dateProvider).sunday.add(Duration(days: d + 1));
-                  bool isToday = false;
-                  if (date.isBefore(today) &&
-                      date.add(const Duration(days: 1)).isAfter(today)) {
-                    isToday = true;
-                  }
-                  int month = date.month;
-                  int day = date.day;
-                  return Container(
-                    height: 60,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          for (int d = 0; d < 5; d++)
+            Expanded(
+              child: Builder(builder: (context) {
+                DateTime today = ref.watch(dateProvider).now;
+                DateTime date =
+                    ref.watch(dateProvider).sunday.add(Duration(days: d + 1));
+                bool isToday = false;
+                if (date.isBefore(today) &&
+                    date.add(const Duration(days: 1)).isAfter(today)) {
+                  isToday = true;
+                }
+                int month = date.month;
+                int day = date.day;
+                return Card(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey.shade300
+                      : Colors.grey.shade700,
+                  child: Container(
+                    height: 35,
                     alignment: Alignment.center,
                     child: Text(
                       '$month/$day',
@@ -788,52 +792,103 @@ class TaskTableView extends ConsumerWidget {
                         fontWeight: isToday ? FontWeight.bold : null,
                       ),
                     ),
-                  );
-                }),
-            ]),
-            for (int l = 0; l < 7; l++)
-              TableRow(
-                  decoration: l == 3
-                      ? const BoxDecoration(
-                          border: Border(
-                          bottom: BorderSide(
-                              width: 5,
-                              color: Colors.blue,
-                              strokeAlign: BorderSide.strokeAlignInside),
-                        ))
-                      : null,
-                  children: [
-                    for (int d = 0; d < 5; d++)
-                      Container(
-                        margin:
-                            l == 3 ? const EdgeInsets.only(bottom: 5) : null,
-                        color: classColor(d + 1, l, tasks, Theme.of(context)),
+                  ),
+                );
+              }),
+            ),
+        ]),
+        for (int l = 0; l < 4; l++)
+          Row(children: [
+            for (int d = 0; d < 5; d++)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(1.5),
+                  child: Card(
+                    shape: RoundedRectangleBorder(borderRadius: borderRadius),
+                    color: classColor(d + 1, l, tasks, Theme.of(context)),
+                    child: InkWell(
+                      borderRadius: borderRadius,
+                      onTap: () {
+                        showModalBottomSheet(
+                            showDragHandle: true,
+                            context: context,
+                            builder: (context) => BottomSheet(
+                                className: lesson[d * 7 + l],
+                                weekDay: d + 1,
+                                lessonIdx: l));
+                      },
+                      child: Container(
                         height: 60,
                         alignment: Alignment.center,
-                        child: TextButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                                showDragHandle: true,
-                                context: context,
-                                builder: (context) => BottomSheet(
-                                    className: lesson[d * 7 + l],
-                                    weekDay: d + 1,
-                                    lessonIdx: l));
-                          },
-                          child: Text(
-                            lesson[d * 7 + l],
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.black
-                                  : Colors.white,
-                            ),
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          lesson[d * 7 + l],
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
                           ),
                         ),
                       ),
-                  ]),
+                    ),
+                  ),
+                ),
+              ),
           ]),
+        Padding(
+          padding: const EdgeInsets.all(1.5),
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: borderRadius),
+            child: Container(
+              height: 30,
+              alignment: Alignment.center,
+              child: const Text(
+                '午休時間',
+                style: TextStyle(
+                  letterSpacing: 40,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        ),
+        for (int l = 4; l < 7; l++)
+          Row(children: [
+            for (int d = 0; d < 5; d++)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(1.5),
+                  child: Card(
+                    shape: RoundedRectangleBorder(borderRadius: borderRadius),
+                    color: classColor(d + 1, l, tasks, Theme.of(context)),
+                    child: InkWell(
+                      borderRadius: borderRadius,
+                      onTap: () {
+                        showModalBottomSheet(
+                            showDragHandle: true,
+                            context: context,
+                            builder: (context) => BottomSheet(
+                                className: lesson[d * 7 + l],
+                                weekDay: d + 1,
+                                lessonIdx: l));
+                      },
+                      child: Container(
+                        height: 60,
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          lesson[d * 7 + l],
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+      ]),
     );
   }
 
@@ -871,186 +926,205 @@ class TaskListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final borderRadius = BorderRadius.circular(10);
     Map<String, String> usersData = ref.watch(usersProvider);
 
-    return ListView.builder(
-      physics: canScroll
-          ? const BouncingScrollPhysics()
-          : const NeverScrollableScrollPhysics(),
-      shrinkWrap: !canScroll,
-      itemCount: tasks.length * 2,
-      itemBuilder: (context, allIndex) {
-        int idx = allIndex ~/ 2;
-        if (allIndex % 2 == 1) {
-          String lessonName = tasks[idx].classTime == -1
-              ? tasks[idx].date.toString().split(' ')[1].substring(0, 5)
-              : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
-          return Row(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: Checkbox(
-                  value: ref.watch(todoProvider).contains(tasks[idx].taskId),
-                  onChanged: (value) {
-                    ref
-                        .read(todoProvider.notifier)
-                        .changeData(tasks[idx].taskId);
-                  },
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Card(
+        shape: BeveledRectangleBorder(borderRadius: borderRadius),
+        child: ListView.builder(
+          physics: canScroll
+              ? const BouncingScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+          shrinkWrap: !canScroll,
+          itemCount: tasks.length * 2,
+          itemBuilder: (context, allIndex) {
+            int idx = allIndex ~/ 2;
+            if (allIndex % 2 == 1) {
+              String lessonName = tasks[idx].classTime == -1
+                  ? tasks[idx].date.toString().split(' ')[1].substring(0, 5)
+                  : '第${tasks[idx].classTime + 1}節 ${lesson[(tasks[idx].date.weekday - 1) * 7 + tasks[idx].classTime]}';
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
                   children: [
-                    Wrap(
-                      spacing: 5,
-                      crossAxisAlignment: WrapCrossAlignment.end,
-                      children: [
-                        if (tasks[idx].top)
-                          const Icon(
-                            Icons.push_pin,
-                            color: Colors.red,
-                            size: 25,
-                          ),
-                        Text(
-                          tasks[idx].name,
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: Checkbox(
+                        value:
+                            ref.watch(todoProvider).contains(tasks[idx].taskId),
+                        onChanged: (value) {
+                          ref
+                              .read(todoProvider.notifier)
+                              .changeData(tasks[idx].taskId);
+                        },
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    if (!short)
-                      Text(
-                        '$lessonName ${[
-                          '考試',
-                          '作業',
-                          '報告',
-                          '提醒',
-                          '繳交',
-                        ][tasks[idx].type]}',
-                        style: const TextStyle(fontSize: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 5,
+                            crossAxisAlignment: WrapCrossAlignment.end,
+                            children: [
+                              if (tasks[idx].top)
+                                const Icon(
+                                  Icons.push_pin,
+                                  color: Colors.red,
+                                  size: 25,
+                                ),
+                              Text(
+                                tasks[idx].name,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          if (!short)
+                            Text(
+                              '$lessonName ${[
+                                '考試',
+                                '作業',
+                                '報告',
+                                '提醒',
+                                '繳交',
+                              ][tasks[idx].type]}',
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          if (!short)
+                            Text(
+                              usersData[tasks[idx].userId] ?? '未知建立者',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                        ],
                       ),
-                    if (!short)
-                      Text(
-                        usersData[tasks[idx].userId] ?? '未知建立者',
-                        style: const TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: PopupMenuButton(
+                        itemBuilder: (context) => <PopupMenuEntry>[
+                          PopupMenuItem(
+                              enabled: tasks[idx].userId ==
+                                  ref.watch(authProvider).user?.uid,
+                              value: 'top',
+                              child: Row(
+                                children: [
+                                  Icon(tasks[idx].top
+                                      ? Icons.push_pin_outlined
+                                      : Icons.push_pin),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Text(tasks[idx].top ? '取消置頂' : '置頂'),
+                                ],
+                              )),
+                          const PopupMenuItem(
+                              value: 'copy',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.copy),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Text('複製項目'),
+                                ],
+                              )),
+                          const PopupMenuItem(
+                              enabled: false,
+                              value: 'star',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.star),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Text('標記星號'),
+                                ],
+                              )),
+                          PopupMenuItem(
+                              enabled: tasks[idx].userId ==
+                                  ref.watch(authProvider).user?.uid,
+                              value: 'edit',
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.edit_note),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Text('修改'),
+                                ],
+                              )),
+                        ],
+                        onSelected: (value) async {
+                          switch (value) {
+                            case 'top':
+                              tasks[idx].pinTop();
+                              break;
+                            case 'edit':
+                              ref
+                                  .read(formProvider.notifier)
+                                  .startUpdate(tasks[idx]);
+                              showDialog(
+                                context: context,
+                                builder: (context) => const TaskForm(),
+                              );
+                              break;
+                            case 'star':
+                              break;
+                            case 'copy':
+                              await Clipboard.setData(
+                                  ClipboardData(text: tasks[idx].name));
+                              Fluttertoast.showToast(
+                                msg: '已複製到剪貼簿',
+                                timeInSecForIosWeb: 1,
+                                webShowClose: true,
+                              );
+                              break;
+                          }
+                        },
+                        tooltip: '更多',
                       ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(
-                width: 5,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: PopupMenuButton(
-                  itemBuilder: (context) => <PopupMenuEntry>[
-                    PopupMenuItem(
-                        enabled: tasks[idx].userId ==
-                            ref.watch(authProvider).user?.uid,
-                        value: 'top',
-                        child: Row(
-                          children: [
-                            Icon(tasks[idx].top
-                                ? Icons.push_pin_outlined
-                                : Icons.push_pin),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Text(tasks[idx].top ? '取消置頂' : '置頂'),
-                          ],
-                        )),
-                    const PopupMenuItem(
-                        value: 'copy',
-                        child: Row(
-                          children: [
-                            Icon(Icons.copy),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Text('複製項目'),
-                          ],
-                        )),
-                    const PopupMenuItem(
-                        enabled: false,
-                        value: 'star',
-                        child: Row(
-                          children: [
-                            Icon(Icons.star),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Text('標記星號'),
-                          ],
-                        )),
-                    PopupMenuItem(
-                        enabled: tasks[idx].userId ==
-                            ref.watch(authProvider).user?.uid,
-                        value: 'edit',
-                        child: const Row(
-                          children: [
-                            Icon(Icons.edit_note),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Text('修改'),
-                          ],
-                        )),
-                  ],
-                  onSelected: (value) async {
-                    switch (value) {
-                      case 'top':
-                        tasks[idx].pinTop();
-                        break;
-                      case 'edit':
-                        ref.read(formProvider.notifier).startUpdate(tasks[idx]);
-                        showDialog(
-                          context: context,
-                          builder: (context) => const TaskForm(),
-                        );
-                        break;
-                      case 'star':
-                        break;
-                      case 'copy':
-                        await Clipboard.setData(
-                            ClipboardData(text: tasks[idx].name));
-                        Fluttertoast.showToast(
-                          msg: '已複製到剪貼簿',
-                          timeInSecForIosWeb: 1,
-                          webShowClose: true,
-                        );
-                        break;
-                    }
-                  },
-                  tooltip: '更多',
-                ),
-              ),
-            ],
-          );
-        } else {
-          if ((idx == 0
-                  ? true
-                  : tasks[idx].date.day != tasks[idx - 1].date.day) &&
-              showDateTitle) {
-            return Container(
-              color: Theme.of(context).colorScheme.tertiaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('${tasks[idx].date.toString().split(' ')[0]}  週${[
-                '日',
-                'ㄧ',
-                '二',
-                '三',
-                '四',
-                '五',
-                '六'
-              ][tasks[idx].date.weekday % 7]}'),
-            );
-          } else {
-            return const Divider();
-          }
-        }
-      },
+              );
+            } else {
+              if ((idx == 0
+                      ? true
+                      : tasks[idx].date.day != tasks[idx - 1].date.day) &&
+                  showDateTitle) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    borderRadius: borderRadius,
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: EdgeInsets.only(top: (idx == 0) ? 0 : 8, bottom: 8),
+                  child: Text('${tasks[idx].date.toString().split(' ')[0]}  週${[
+                    '日',
+                    'ㄧ',
+                    '二',
+                    '三',
+                    '四',
+                    '五',
+                    '六'
+                  ][tasks[idx].date.weekday % 7]}'),
+                );
+              } else if (idx != 0) {
+                return const Divider();
+              } else {
+                return const SizedBox();
+              }
+            }
+          },
+        ),
+      ),
     );
   }
 }
