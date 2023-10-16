@@ -756,33 +756,27 @@ class TaskTableView extends ConsumerWidget {
   const TaskTableView(this.tasks, {super.key});
   final List<Task> tasks;
 
-  @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final borderRadius = BorderRadius.circular(10);
-
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          for (int d = 0; d < 5; d++)
-            Expanded(
-              child: Builder(builder: (context) {
-                DateTime today = ref.watch(dateProvider).now;
-                DateTime date =
-                    ref.watch(dateProvider).sunday.add(Duration(days: d + 1));
-                bool isToday = false;
-                if (date.isBefore(today) &&
-                    date.add(const Duration(days: 1)).isAfter(today)) {
-                  isToday = true;
-                }
-                int month = date.month;
-                int day = date.day;
-                return Card(
-                  color: Theme.of(context).brightness == Brightness.light
-                      ? Colors.grey.shade300
-                      : Colors.grey.shade700,
-                  child: Container(
-                    height: 35,
+      child: Table(
+          border: TableBorder.all(color: Colors.blue, width: 2),
+          children: [
+            TableRow(children: [
+              for (int d = 0; d < 5; d++)
+                Builder(builder: (context) {
+                  DateTime today = ref.watch(dateProvider).now;
+                  DateTime date =
+                      ref.watch(dateProvider).sunday.add(Duration(days: d + 1));
+                  bool isToday = false;
+                  if (date.isBefore(today) &&
+                      date.add(const Duration(days: 1)).isAfter(today)) {
+                    isToday = true;
+                  }
+                  int month = date.month;
+                  int day = date.day;
+                  return Container(
+                    height: 60,
                     alignment: Alignment.center,
                     child: Text(
                       '$month/$day',
@@ -792,103 +786,52 @@ class TaskTableView extends ConsumerWidget {
                         fontWeight: isToday ? FontWeight.bold : null,
                       ),
                     ),
-                  ),
-                );
-              }),
-            ),
-        ]),
-        for (int l = 0; l < 4; l++)
-          Row(children: [
-            for (int d = 0; d < 5; d++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(1.5),
-                  child: Card(
-                    shape: RoundedRectangleBorder(borderRadius: borderRadius),
-                    color: classColor(d + 1, l, tasks, Theme.of(context)),
-                    child: InkWell(
-                      borderRadius: borderRadius,
-                      onTap: () {
-                        showModalBottomSheet(
-                            showDragHandle: true,
-                            context: context,
-                            builder: (context) => BottomSheet(
-                                className: lesson[d * 7 + l],
-                                weekDay: d + 1,
-                                lessonIdx: l));
-                      },
-                      child: Container(
+                  );
+                }),
+            ]),
+            for (int l = 0; l < 7; l++)
+              TableRow(
+                  decoration: l == 3
+                      ? const BoxDecoration(
+                          border: Border(
+                          bottom: BorderSide(
+                              width: 5,
+                              color: Colors.blue,
+                              strokeAlign: BorderSide.strokeAlignInside),
+                        ))
+                      : null,
+                  children: [
+                    for (int d = 0; d < 5; d++)
+                      Container(
+                        margin:
+                            l == 3 ? const EdgeInsets.only(bottom: 5) : null,
+                        color: classColor(d + 1, l, tasks, Theme.of(context)),
                         height: 60,
                         alignment: Alignment.center,
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                          lesson[d * 7 + l],
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
+                        child: TextButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                                showDragHandle: true,
+                                context: context,
+                                builder: (context) => BottomSheet(
+                                    className: lesson[d * 7 + l],
+                                    weekDay: d + 1,
+                                    lessonIdx: l));
+                          },
+                          child: Text(
+                            lesson[d * 7 + l],
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ),
+                  ]),
           ]),
-        Padding(
-          padding: const EdgeInsets.all(1.5),
-          child: Card(
-            shape: RoundedRectangleBorder(borderRadius: borderRadius),
-            child: Container(
-              height: 30,
-              alignment: Alignment.center,
-              child: const Text(
-                '午休時間',
-                style: TextStyle(
-                  letterSpacing: 40,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ),
-        for (int l = 4; l < 7; l++)
-          Row(children: [
-            for (int d = 0; d < 5; d++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(1.5),
-                  child: Card(
-                    shape: RoundedRectangleBorder(borderRadius: borderRadius),
-                    color: classColor(d + 1, l, tasks, Theme.of(context)),
-                    child: InkWell(
-                      borderRadius: borderRadius,
-                      onTap: () {
-                        showModalBottomSheet(
-                            showDragHandle: true,
-                            context: context,
-                            builder: (context) => BottomSheet(
-                                className: lesson[d * 7 + l],
-                                weekDay: d + 1,
-                                lessonIdx: l));
-                      },
-                      child: Container(
-                        height: 60,
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                          lesson[d * 7 + l],
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ]),
-      ]),
     );
   }
 
@@ -1099,10 +1042,10 @@ class TaskListView extends ConsumerWidget {
                       : tasks[idx].date.day != tasks[idx - 1].date.day) &&
                   showDateTitle) {
                 return Container(
-                  // decoration: BoxDecoration(
-                  //   color: Theme.of(context).colorScheme.tertiaryContainer,
-                  //   borderRadius: borderRadius,
-                  // ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    borderRadius: borderRadius,
+                  ),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   margin: EdgeInsets.only(top: (idx == 0) ? 0 : 8, bottom: 8),
