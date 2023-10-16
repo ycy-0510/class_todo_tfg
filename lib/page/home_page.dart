@@ -1099,10 +1099,10 @@ class TaskListView extends ConsumerWidget {
                       : tasks[idx].date.day != tasks[idx - 1].date.day) &&
                   showDateTitle) {
                 return Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
-                    borderRadius: borderRadius,
-                  ),
+                  // decoration: BoxDecoration(
+                  //   color: Theme.of(context).colorScheme.tertiaryContainer,
+                  //   borderRadius: borderRadius,
+                  // ),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   margin: EdgeInsets.only(top: (idx == 0) ? 0 : 8, bottom: 8),
