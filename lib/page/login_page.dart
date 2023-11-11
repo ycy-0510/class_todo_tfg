@@ -22,7 +22,8 @@ class LoginPage extends ConsumerWidget {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
                     child: Text(
-                      '登入以繼續使用「共享聯絡簿」',
+                      '登入以繼續使用「共享聯絡簿」\n(北ㄧ一平)',
+                      textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 20),
                     ),
                   ),
@@ -56,26 +57,26 @@ class LoginPage extends ConsumerWidget {
                                 style: TextStyle(fontSize: 15),
                               ),
                             )),
-                        Container(
-                            margin: const EdgeInsets.symmetric(vertical: 5),
-                            width: 300,
-                            height: 40,
-                            child: ElevatedButton(
-                              onLongPress: loading ? null : () {},
-                              onPressed: loading
-                                  ? null
-                                  : () => ref
-                                      .read(authProvider.notifier)
-                                      .anonymousLogin(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text(
-                                '訪客',
-                                style: TextStyle(fontSize: 15),
-                              ),
-                            )),
+                        // Container(
+                        //     margin: const EdgeInsets.symmetric(vertical: 5),
+                        //     width: 300,
+                        //     height: 40,
+                        //     child: ElevatedButton(
+                        //       onLongPress: loading ? null : () {},
+                        //       onPressed: loading
+                        //           ? null
+                        //           : () => ref
+                        //               .read(authProvider.notifier)
+                        //               .anonymousLogin(),
+                        //       style: ElevatedButton.styleFrom(
+                        //         backgroundColor: Colors.red,
+                        //         foregroundColor: Colors.white,
+                        //       ),
+                        //       child: const Text(
+                        //         '訪客',
+                        //         style: TextStyle(fontSize: 15),
+                        //       ),
+                        //     )),
                       ],
                     ),
                   ),

@@ -40,7 +40,7 @@ class AnnounceNotifier extends StateNotifier<AnnounceState> {
           'date': FieldValue.serverTimestamp()
         });
         const String gasUrl =
-            'https://script.google.com/macros/s/AKfycbxVtO1mvVZMtu8QZBg2OjcZWfE4kNcAQlaC_UtY0QNwwwsMlJMcODrESWIeXkP1-QEuOQ/exec';
+            'https://script.google.com/macros/s/AKfycby5HUVUTRO8NR_DoISbOXiUSU1Psf7dibrJR9pQXoAq7-uM-QD5wjSoxQLldVWIB80J/exec';
         var res = await http
             .get(Uri.parse('$gasUrl?announceId=${dataRef.id}&code=yccjyt'));
         if (res.statusCode != 200 || res.body != '200') {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:class_todo_list/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -26,16 +27,14 @@ class SubmittedNotifier extends StateNotifier<SubmittedState> {
                 _ref.read(dateProvider).now.subtract(const Duration(days: 7)))
         .where('type', isEqualTo: 4);
     listener?.cancel();
-    listener = dataRef.snapshots().listen(
-      (data) {
-        List<Submitted> submittedItem = [];
-        for (var docSnapshot in data.docs) {
-          submittedItem.add(Submitted.fromFirestore(docSnapshot));
-        }
-        state = SubmittedState(submittedItem);
-      },
-      onError: (e) => _showError(e.toString()),
-    );
+    listener = dataRef.snapshots().listen((data) {
+      List<Submitted> submittedItem = [];
+      for (var docSnapshot in data.docs) {
+        submittedItem.add(Submitted.fromFirestore(docSnapshot));
+      }
+      state = SubmittedState(submittedItem);
+    }, onError: (e) => debugPrint(e.toString()) // _showError(e.toString()),
+        );
   }
 
   void _showError(String error) {

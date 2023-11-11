@@ -13,7 +13,7 @@ class InstallPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('安裝共享聯絡簿'),
+        title: const Text('安裝共享聯絡簿(北一一平)'),
       ),
       body: Center(
         child: Builder(builder: (context) {

@@ -21,7 +21,7 @@ Future<void> main() async {
   );
   await FirebaseAppCheck.instance.activate(
     webProvider:
-        ReCaptchaEnterpriseProvider('6LdOJ10oAAAAAGthrAXTn_Fk3GaHCoex00TVuEDw'),
+        ReCaptchaEnterpriseProvider('6LebrQspAAAAANPnVdmH1HmSwNS7THEZZwdzjzLX'),
   );
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   FlutterNativeSplash.remove();
