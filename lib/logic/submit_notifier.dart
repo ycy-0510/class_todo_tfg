@@ -27,14 +27,16 @@ class SubmittedNotifier extends StateNotifier<SubmittedState> {
                 _ref.read(dateProvider).now.subtract(const Duration(days: 7)))
         .where('type', isEqualTo: 4);
     listener?.cancel();
-    listener = dataRef.snapshots().listen((data) {
-      List<Submitted> submittedItem = [];
-      for (var docSnapshot in data.docs) {
-        submittedItem.add(Submitted.fromFirestore(docSnapshot));
-      }
-      state = SubmittedState(submittedItem);
-    }, onError: (e) => debugPrint(e.toString()) // _showError(e.toString()),
-        );
+    listener = dataRef.snapshots().listen(
+      (data) {
+        List<Submitted> submittedItem = [];
+        for (var docSnapshot in data.docs) {
+          submittedItem.add(Submitted.fromFirestore(docSnapshot));
+        }
+        state = SubmittedState(submittedItem);
+      },
+      onError: (e) => _showError(e.toString()),
+    );
   }
 
   void _showError(String error) {
